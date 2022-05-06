@@ -18,6 +18,21 @@ windows = { version = "0.36.1", features = [
     "Win32_Storage_FileSystem"
 ] }
 rustc-hash = "1.1.0"
+# Only for the binary crate
+inferno = { version = "0.11", optional = true }
 
 [profile.release]
 debug = true
+
+[[bin]]
+name = "winstacks"
+path = "src/winstacks_bin.rs"
+
+[[bin]]
+name = "winferno"
+path = "src/winferno.rs"
+required-features = ["inferno"]
+
+[[bin]]
+name = "winstacks_dtrace"
+path = "src/winstacks_dtrace.rs"

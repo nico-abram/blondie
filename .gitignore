@@ -1,1 +1,12 @@
 /target
+stacks.folded
+out.stacks
+flamegraph.svg
+winferno_flamegraph.svg
+trace_output
+collapsed_output
+/unused
+/testt
+/.vscode
+out.log
+cargo-flamegraph.stacks
