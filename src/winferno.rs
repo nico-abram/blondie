@@ -14,7 +14,7 @@ fn main() -> Result<(), winstacks::Error> {
     std::fs::write("./trace_output", &trace_output).unwrap();
 
     let mut collapsed_output = Vec::new();
-    let mut collapse_options = inferno::collapse::dtrace::Options::default();
+    let collapse_options = inferno::collapse::dtrace::Options::default();
     inferno::collapse::dtrace::Folder::from(collapse_options)
         .collapse(&trace_output[..], &mut collapsed_output)
         .expect("unable to collapse generated profile data");
