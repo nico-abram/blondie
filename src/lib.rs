@@ -91,7 +91,7 @@ pub enum Error {
     /// The processing thread panicked and we don't know why
     UnknownError,
     /// Error spawning a suspended process
-    SpawnErr(std::io::Error),
+    SpawnErr(std::io::Error, OsString, Vec<OsString>),
     /// Error waiting for child
     WaitOnChildErr(std::io::Error),
     Other(WIN32_ERROR, String),
@@ -143,11 +143,11 @@ fn create_suspended(arg0: OsString, args: &[OsString]) -> Result<std::process::C
     use std::os::windows::process::CommandExt;
 
     // Create the target process suspended
-    let proc = std::process::Command::new(arg0)
+    let proc = std::process::Command::new(&arg0)
         .args(args)
         .creation_flags(CREATE_SUSPENDED.0)
         .spawn()
-        .map_err(|err| Error::SpawnErr(err))?;
+        .map_err(|err| Error::SpawnErr(err, arg0, args.iter().cloned().collect::<Vec<_>>()))?;
     Ok(proc)
 }
 fn acquire_priviledges() -> Result<()> {
