@@ -1,7 +1,16 @@
 [package]
 name = "winstacks"
-version = "0.1.0"
+description = "Collect CPU call stack samples from a windows process"
+version = "0.1.0-alpha1"
 edition = "2021"
+license = "MIT OR Apache-2.0 OR BSL-1.0 OR MPL-2.0 OR Zlib OR Unlicense"
+homepage = "https://github.com/nico-abram/winstacks/"
+repository = "https://github.com/nico-abram/winstacks/"
+documentation = "https://docs.rs/winstacks"
+readme = "README.md"
+keywords = ["windows", "profiling", "sampling", "callstack", "perf"]
+categories = ["Command line utilities", "Profiling", "Visualization"]
+include = ["/src", "LICENSE"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -29,8 +38,8 @@ name = "winstacks"
 path = "src/winstacks_bin.rs"
 
 [[bin]]
-name = "winferno"
-path = "src/winferno.rs"
+name = "winstacks_inferno"
+path = "src/winstacks_inferno.rs"
 required-features = ["inferno"]
 
 [[bin]]

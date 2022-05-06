@@ -4,7 +4,7 @@ Collect CPU call stack samplles from a windows process.
 
 Since the ["SampledProfile"](https://docs.microsoft.com/en-us/windows/win32/etw/sampledprofile) ETW events we use come from a ["kernel event provider"](https://docs.microsoft.com/en-us/windows/win32/etw/event-tracing-mof-classes)(PerfInfo) we must use the ETW ["Kernel Logger session"](https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants), which requires elevated priviledges. Therefore, **you must run winstack as administrator in order for it to work**.
 
-The `winferno` binary can be used to generate a flamegraph using the [`inferno` library](https://github.com/jonhoo/inferno).
+The `winstacks_inferno` binary can be used to generate a flamegraph using the [`inferno` library](https://github.com/jonhoo/inferno).
 
 The `winstacks` binary can be used to generate a text file with the sample count of each call stack.
 
@@ -12,7 +12,7 @@ The `winstacks_dtrace` binary can be used as a dtrace replacement in [cargo-flam
 
 Examples:
 
-    ./winferno.exe ./target/debug/x86-64-windows-msvc/some_binary_with_debuginfo.exe arg1 arg2 ; ./winferno_flamegraph.svg
+    ./winstacks_inferno.exe ./target/debug/x86-64-windows-msvc/some_binary_with_debuginfo.exe arg1 arg2 ; ./winferno_flamegraph.svg
 
     cargo build --release --bin winstacks_dtrace
     $ENV:DTRACE = "current_dir/target/release/winstacks_dtrace.exe" # Or set DTRACE="current_dir/target/release/winstacks_dtrace.exe" in cmd.exe

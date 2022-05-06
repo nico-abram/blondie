@@ -4,9 +4,9 @@ use inferno::collapse::Collapse;
 
 fn main() -> Result<(), winstacks::Error> {
     let mut args = std::env::args_os().skip(1);
-    let arg0 = args
-        .next()
-        .expect("Expected command to run.\nUSAGE: winferno.exe [command] [command args...]");
+    let arg0 = args.next().expect(
+        "Expected command to run.\nUSAGE: winstacks_inferno.exe [command] [command args...]",
+    );
     let trace_ctx = winstacks::trace_command(arg0, &args.collect::<Vec<_>>())?;
 
     let mut trace_output = Vec::new();
