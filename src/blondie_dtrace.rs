@@ -19,7 +19,7 @@ fn main() -> Result<(), blondie::Error> {
         _args_v = it
             .map(|s| std::ffi::OsStr::new(s).to_os_string())
             .collect::<Vec<_>>();
-        other_args = &args_v[..];
+        other_args = &_args_v[..];
         arg0 = arg0_str.to_os_string();
     }
 
