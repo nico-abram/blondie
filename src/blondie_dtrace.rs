@@ -5,8 +5,7 @@ fn main() -> Result<(), blondie::Error> {
     let dash_c_idx = args
         .iter()
         .enumerate()
-        .filter(|(_, arg)| arg.to_str().unwrap() == "-c")
-        .next()
+        .find(|(_, arg)| arg.to_str().unwrap() == "-c")
         .unwrap()
         .0;
     let args = &args[dash_c_idx + 1..];

@@ -5,6 +5,8 @@
 //! Or you can use [`trace_child`] to start tracing an [`std::process::Child`].
 // You can also trace an arbitrary process using [`trace_pid`].
 
+#![allow(clippy::field_reassign_with_default)]
+
 use windows::core::{GUID, PCSTR, PCWSTR, PSTR};
 use windows::Win32::Foundation::{
     CloseHandle, DuplicateHandle, GetLastError, DUPLICATE_SAME_ACCESS, ERROR_SUCCESS,
@@ -70,7 +72,7 @@ impl TraceContext {
         }
 
         Ok(Self {
-            target_process_handle: target_process_handle,
+            target_process_handle,
             stack_counts_hashmap: Default::default(),
             target_proc_pid,
             trace_running: AtomicBool::new(false),
@@ -172,8 +174,7 @@ fn acquire_priviledges() -> Result<()> {
                     .cloned()
                     .chain(Some(0))
                     .collect::<Vec<u8>>()
-                    .as_ptr()
-                    .into(),
+                    .as_ptr(),
             ),
             &mut privs.Privileges[0].Luid,
         )
@@ -207,7 +208,7 @@ fn acquire_priviledges() -> Result<()> {
 }
 /// SAFETY: is_suspended must only be true if `target_process` is suspended
 unsafe fn trace_from_process(
-    mut target_process: std::process::Child,
+    target_process: &mut std::process::Child,
     is_suspended: bool,
     kernel_stacks: bool,
 ) -> Result<TraceContext> {
@@ -510,9 +511,7 @@ unsafe fn trace_from_process(
         NtResumeProcess(context.target_process_handle.0);
     }
     // Wait for it to end
-    target_process
-        .wait()
-        .map_err(|err| Error::WaitOnChildErr(err))?;
+    target_process.wait().map_err(Error::WaitOnChildErr)?;
     // This unblocks ProcessTrace
     let ret = ControlTraceA(
         0,
@@ -525,7 +524,7 @@ unsafe fn trace_from_process(
     }
     // Block until processing thread is done
     // (Safeguard to make sure we don't deallocate the context before the other thread finishes using it)
-    if let Err(_) = recvr.recv() {
+    if recvr.recv().is_err() {
         return Err(Error::UnknownError);
     }
 
@@ -538,10 +537,12 @@ pub struct CollectionResults(TraceContext);
 /// Trace an existing child process.
 /// It is recommended that you use `trace_command` instead, since it suspends the process on creation
 /// and only resumes it after the trace has started, ensuring that all samples are captured.
-pub fn trace_child(process: std::process::Child, kernel_stacks: bool) -> Result<CollectionResults> {
-    Ok(CollectionResults(unsafe {
-        trace_from_process(process, false, kernel_stacks)?
-    }))
+pub fn trace_child(
+    mut process: std::process::Child,
+    kernel_stacks: bool,
+) -> Result<CollectionResults> {
+    let res = unsafe { trace_from_process(&mut process, false, kernel_stacks) };
+    res.map(CollectionResults)
 }
 /// Execute `command` and trace it, periodically collecting call stacks.
 /// The trace also tracks dlls and exes loaded by the process and loads the debug info for
@@ -555,14 +556,16 @@ pub fn trace_command(
 
     // Create the target process suspended
     // TODO: Preserve existing flags instead of stomping them
-    let proc = command
+    let mut proc = command
         .creation_flags(CREATE_SUSPENDED.0)
         .spawn()
-        .map_err(|err| Error::SpawnErr(err))?;
-
-    Ok(CollectionResults(unsafe {
-        trace_from_process(proc, true, kernel_stacks)?
-    }))
+        .map_err(Error::SpawnErr)?;
+    let res = unsafe { trace_from_process(&mut proc, true, kernel_stacks) };
+    if res.is_err() {
+        // Kill the suspended process if we had some kind of error
+        let _ = proc.kill();
+    }
+    res.map(CollectionResults)
 }
 /// A callstack and the count of samples it was found in
 ///
@@ -648,7 +651,7 @@ impl<'a> CallStack<'a> {
 }
 impl CollectionResults {
     /// Iterate the distinct callstacks sampled in this execution
-    pub fn iter_callstacks<'a>(&'a self) -> impl std::iter::Iterator<Item = CallStack<'a>> + 'a {
+    pub fn iter_callstacks(&self) -> impl std::iter::Iterator<Item = CallStack<'_>> {
         self.0.stack_counts_hashmap.iter().map(|x| CallStack {
             ctx: &self.0,
             stack: x.0,
@@ -675,22 +678,22 @@ impl CollectionResults {
                 if let Some(symbol_name) = resolved_addr.symbol_name {
                     if let Some(image_name) = resolved_addr.image_name {
                         if displacement != 0 {
-                            write!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}\n")
+                            writeln!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}")
                                 .unwrap();
                         } else {
-                            write!(w, "\t\t{image_name}`{symbol_name}\n").unwrap();
+                            writeln!(w, "\t\t{image_name}`{symbol_name}").unwrap();
                         }
                     } else {
                         // Image name not found
                         if displacement != 0 {
-                            write!(w, "\t\t{symbol_name}+0x{displacement:X}\n").unwrap();
+                            writeln!(w, "\t\t{symbol_name}+0x{displacement:X}").unwrap();
                         } else {
-                            write!(w, "\t\t{symbol_name}\n").unwrap();
+                            writeln!(w, "\t\t{symbol_name}").unwrap();
                         }
                     }
                 } else {
                     // Symbol not found
-                    write!(w, "\t\t{address:X}\n").unwrap();
+                    writeln!(w, "\t\t{address:X}").unwrap();
                 }
             }
             let count = callstack.sample_count;
