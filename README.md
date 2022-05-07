@@ -1,21 +1,19 @@
-# winstacks
+# blondie
 
-Collect CPU call stack samplles from a windows process.
+Collect CPU callstack samples from a windows process.
 
-Since the ["SampledProfile"](https://docs.microsoft.com/en-us/windows/win32/etw/sampledprofile) ETW events we use come from a ["kernel event provider"](https://docs.microsoft.com/en-us/windows/win32/etw/event-tracing-mof-classes)(PerfInfo) we must use the ETW ["Kernel Logger session"](https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants), which requires elevated priviledges. Therefore, **you must run winstack as administrator in order for it to work**.
+Since the ["SampledProfile"](https://docs.microsoft.com/en-us/windows/win32/etw/sampledprofile) ETW events we use come from a ["kernel event provider"](https://docs.microsoft.com/en-us/windows/win32/etw/event-tracing-mof-classes)(PerfInfo) we must use the ETW ["Kernel Logger session"](https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants), which requires elevated priviledges. Therefore, **you must run blondie as administrator in order for it to work**.
 
-The `winstacks_inferno` binary can be used to generate a flamegraph using the [`inferno` library](https://github.com/jonhoo/inferno).
+The `blondie` binary can be used to generate a text file with the sample count of each call stack, or a flamegraph using the [`inferno` library](https://github.com/jonhoo/inferno).
 
-The `winstacks` binary can be used to generate a text file with the sample count of each call stack.
-
-The `winstacks_dtrace` binary can be used as a dtrace replacement in [cargo-flamegraph](https://github.com/flamegraph-rs) via the DTRACE environment variable.
+The `blondie_dtrace` binary can be used as a dtrace replacement in [cargo-flamegraph](https://github.com/flamegraph-rs) via the DTRACE environment variable.
 
 Examples:
 
-    ./winstacks_inferno.exe ./target/debug/x86-64-windows-msvc/some_binary_with_debuginfo.exe arg1 arg2 ; ./winferno_flamegraph.svg
+    ./blondie.exe ./target/debug/some_binary_with_debuginfo.exe arg1 arg2 ; ./flamegraph.svg
 
-    cargo build --release --bin winstacks_dtrace
-    $ENV:DTRACE = "current_dir/target/release/winstacks_dtrace.exe" # Or set DTRACE="current_dir/target/release/winstacks_dtrace.exe" in cmd.exe
+    cargo build --release --bin blondie_dtrace
+    $ENV:DTRACE = "current_dir/target/release/blondie_dtrace.exe" # Or set DTRACE="current_dir/target/release/blondie_dtrace.exe" in cmd.exe
     cd some/other/project
     cargo flamegraph ; ./flamegraph.svg
 
@@ -32,7 +30,7 @@ This is built using the ETW(Event Tracing for Windows)]() API to collect CPU sam
 
 # Example output
 
-Here's a bit of example output from running winstack on [dust](https://github.com/bootandy/dust):
+Here's a bit of example output from running blondie on [dust](https://github.com/bootandy/dust):
 
 <details>
   <summary>Example output</summary>
@@ -298,3 +296,4 @@ Here's a bit of example output from running winstack on [dust](https://github.co
 ```
 
 </details>
+```

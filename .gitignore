@@ -10,3 +10,6 @@ collapsed_output
 /.vscode
 out.log
 cargo-flamegraph.stacks
+out.logg
+out2.logg
+stacks_folded.txt

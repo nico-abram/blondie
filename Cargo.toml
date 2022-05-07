@@ -1,12 +1,12 @@
 [package]
-name = "winstacks"
+name = "blondie"
 description = "Collect CPU call stack samples from a windows process"
 version = "0.1.0-alpha2"
 edition = "2021"
 license = "MIT OR Apache-2.0 OR BSL-1.0 OR MPL-2.0 OR Zlib OR Unlicense"
-homepage = "https://github.com/nico-abram/winstacks/"
-repository = "https://github.com/nico-abram/winstacks/"
-documentation = "https://docs.rs/winstacks"
+homepage = "https://github.com/nico-abram/blondie/"
+repository = "https://github.com/nico-abram/blondie/"
+documentation = "https://docs.rs/blondie"
 readme = "README.md"
 keywords = ["windows", "profiling", "sampling", "callstack", "perf"]
 categories = [
@@ -33,19 +33,16 @@ windows = { version = "0.36.1", features = [
 rustc-hash = "1.1.0"
 # Only for the binary crate
 inferno = { version = "0.11", optional = true }
+clap = { version = "3.1", optional = true }
 
 [profile.release]
 debug = true
 
 [[bin]]
-name = "winstacks"
-path = "src/winstacks_bin.rs"
+name = "blondie"
+path = "src/blondie_bin.rs"
+required-features = ["inferno", "clap"]
 
 [[bin]]
-name = "winstacks_inferno"
-path = "src/winstacks_inferno.rs"
-required-features = ["inferno"]
-
-[[bin]]
-name = "winstacks_dtrace"
-path = "src/winstacks_dtrace.rs"
+name = "blondie_dtrace"
+path = "src/blondie_dtrace.rs"

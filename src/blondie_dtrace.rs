@@ -1,6 +1,6 @@
-// Binary to run cargo-flamegraph using winstacks, which pretends to be dtrace
+// Binary to run cargo-flamegraph using blondie, which pretends to be dtrace
 
-fn main() -> Result<(), winstacks::Error> {
+fn main() -> Result<(), blondie::Error> {
     let args = std::env::args_os().skip(1).collect::<Vec<_>>();
     let dash_c_idx = args
         .iter()
@@ -22,7 +22,11 @@ fn main() -> Result<(), winstacks::Error> {
         other_args = &args_v[..];
         arg0 = arg0_str.to_os_string();
     }
-    let trace_ctx = winstacks::trace_command(arg0.clone(), other_args)?;
+
+    let mut c = std::process::Command::new(&arg0);
+    c.args(other_args);
+    let kernel_stacks = false;
+    let trace_ctx = blondie::trace_command(c, kernel_stacks)?;
 
     let f = std::fs::File::create("./cargo-flamegraph.stacks").expect("Unable to create file");
     let mut f = std::io::BufWriter::new(f);
