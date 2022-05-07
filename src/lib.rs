@@ -46,7 +46,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 /// map[array_of_stacktrace_addrs] = sample_count
 type StackMap = rustc_hash::FxHashMap<[u64; MAX_STACK_DEPTH], u64>;
-pub struct TraceContext {
+struct TraceContext {
     target_process_handle: HANDLE,
     stack_counts_hashmap: StackMap,
     target_proc_pid: u32,
@@ -431,36 +431,36 @@ unsafe fn trace_from_process(
         #[repr(C)]
         #[derive(Debug)]
         #[allow(non_snake_case)]
-        pub struct EVENT_HEADERR {
-            pub Size: u16,
-            pub HeaderType: u16,
-            pub Flags: u16,
-            pub EventProperty: u16,
-            pub ThreadId: u32,
-            pub ProcessId: u32,
-            pub TimeStamp: i64,
-            pub ProviderId: ::windows::core::GUID,
-            pub EventDescriptor: windows::Win32::System::Diagnostics::Etw::EVENT_DESCRIPTOR,
-            pub KernelTime: u32,
-            pub UserTime: u32,
-            pub ProcessorTime: u64,
-            pub ActivityId: ::windows::core::GUID,
+        struct EVENT_HEADERR {
+            Size: u16,
+            HeaderType: u16,
+            Flags: u16,
+            EventProperty: u16,
+            ThreadId: u32,
+            ProcessId: u32,
+            TimeStamp: i64,
+            ProviderId: ::windows::core::GUID,
+            EventDescriptor: windows::Win32::System::Diagnostics::Etw::EVENT_DESCRIPTOR,
+            KernelTime: u32,
+            UserTime: u32,
+            ProcessorTime: u64,
+            ActivityId: ::windows::core::GUID,
         }
         #[repr(C)]
         #[derive(Debug)]
         #[allow(non_snake_case)]
-        pub struct EVENT_RECORDD {
-            pub EventHeader: EVENT_HEADERR,
-            pub BufferContextAnonymousProcessorNumber: u8,
-            pub BufferContextAnonymousAlignment: u8,
-            pub BufferContextAnonymousProcessorIndex: u16,
-            pub BufferContextLoggerId: u16,
-            pub ExtendedDataCount: u16,
-            pub UserDataLength: u16,
-            pub ExtendedData:
+        struct EVENT_RECORDD {
+            EventHeader: EVENT_HEADERR,
+            BufferContextAnonymousProcessorNumber: u8,
+            BufferContextAnonymousAlignment: u8,
+            BufferContextAnonymousProcessorIndex: u16,
+            BufferContextLoggerId: u16,
+            ExtendedDataCount: u16,
+            UserDataLength: u16,
+            ExtendedData:
                 *mut windows::Win32::System::Diagnostics::Etw::EVENT_HEADER_EXTENDED_DATA_ITEM,
-            pub UserData: *mut ::core::ffi::c_void,
-            pub UserContext: *mut ::core::ffi::c_void,
+            UserData: *mut ::core::ffi::c_void,
+            UserContext: *mut ::core::ffi::c_void,
         }
         eprintln!(            "record {:?} {:?} proc:{proc} thread:{_thread}",            (*record.cast::<EVENT_RECORDD>()),            stack        );
         */
@@ -531,20 +531,25 @@ unsafe fn trace_from_process(
     SymRefreshModuleList(context.target_process_handle);
     Ok(context)
 }
+
+/// The sampled results from a process execution
+pub struct CollectionResults(TraceContext);
 /// Trace an existing child process.
 /// It is recommended that you use `trace_command` instead, since it suspends the process on creation
 /// and only resumes it after the trace has started, ensuring that all samples are captured.
-pub fn trace_child(process: std::process::Child, kernel_stacks: bool) -> Result<TraceContext> {
-    unsafe { trace_from_process(process, false, kernel_stacks) }
+pub fn trace_child(process: std::process::Child, kernel_stacks: bool) -> Result<CollectionResults> {
+    Ok(CollectionResults(unsafe {
+        trace_from_process(process, false, kernel_stacks)?
+    }))
 }
-/// Execute "arg0 args[0] args[1] ...." and trace it, periodically collecting call stacks.
+/// Execute `command` and trace it, periodically collecting call stacks.
 /// The trace also tracks dlls and exes loaded by the process and loads the debug info for
-/// them, if it can find it. It is unloaded on TraceContext Drop.
+/// them, if it can find it. The debug info is used to resolve addresses to symbol names and
+/// is unloaded on TraceContext Drop.
 pub fn trace_command(
     mut command: std::process::Command,
     kernel_stacks: bool,
-) -> Result<TraceContext> {
-    //pub fn trace_command(arg0: OsString, args: &[OsString]) -> Result<TraceContext> {
+) -> Result<CollectionResults> {
     use std::os::windows::process::CommandExt;
 
     // Create the target process suspended
@@ -554,15 +559,19 @@ pub fn trace_command(
         .spawn()
         .map_err(|err| Error::SpawnErr(err))?;
 
-    unsafe { trace_from_process(proc, true, kernel_stacks) }
+    Ok(CollectionResults(unsafe {
+        trace_from_process(proc, true, kernel_stacks)?
+    }))
 }
-/// A distinct callstack and the count of samples it was found in
-pub struct TraceCallStack<'a> {
+/// A callstack and the count of samples it was found in
+pub struct CallStack<'a> {
     ctx: &'a TraceContext,
     stack: &'a [u64; MAX_STACK_DEPTH],
     sample_count: u64,
 }
-pub struct ResolvedAddress {
+
+/// An address from a callstack
+pub struct Address {
     /// Sample Address
     pub addr: u64,
     /// Displacement into the symbol
@@ -572,10 +581,8 @@ pub struct ResolvedAddress {
     /// Imager (Exe or Dll) name
     pub image_name: Option<String>,
 }
-impl<'a> TraceCallStack<'a> {
-    pub fn iter_resolved_addresses(
-        &'a self,
-    ) -> impl std::iter::Iterator<Item = ResolvedAddress> + 'a {
+impl<'a> CallStack<'a> {
+    pub fn iter_resolved_addresses(&'a self) -> impl std::iter::Iterator<Item = Address> + 'a {
         self.stack
             .iter()
             .take_while(|&&addr| addr != 0)
@@ -622,7 +629,7 @@ impl<'a> TraceCallStack<'a> {
                         image_name = Some(image_name_str.to_string());
                     }
                 };
-                ResolvedAddress {
+                Address {
                     addr,
                     displacement,
                     symbol_name,
@@ -631,28 +638,26 @@ impl<'a> TraceCallStack<'a> {
             })
     }
 }
-impl TraceContext {
-    pub fn iter_callstacks<'a>(
-        &'a self,
-    ) -> impl std::iter::Iterator<Item = TraceCallStack<'a>> + 'a {
-        self.stack_counts_hashmap.iter().map(|x| TraceCallStack {
-            ctx: self,
+impl CollectionResults {
+    pub fn iter_callstacks<'a>(&'a self) -> impl std::iter::Iterator<Item = CallStack<'a>> + 'a {
+        self.0.stack_counts_hashmap.iter().map(|x| CallStack {
+            ctx: &self.0,
             stack: x.0,
             sample_count: *x.1,
         })
     }
     /// Resolve call stack symbols and write a dtrace-like sampling report to `w`
     pub fn write_dtrace<W: Write>(&self, mut w: W) -> Result<()> {
-        if self.show_kernel_samples {
+        if self.0.show_kernel_samples {
             unsafe {
-                load_kernel_modules(self.target_process_handle);
+                load_kernel_modules(self.0.target_process_handle);
             }
         }
         'next_callstack: for callstack in self.iter_callstacks() {
             for resolved_addr in callstack.iter_resolved_addresses() {
                 let displacement = resolved_addr.displacement;
                 let address = resolved_addr.addr;
-                if !self.show_kernel_samples {
+                if !self.0.show_kernel_samples {
                     // kernel addresses have the highest bit set on windows
                     if address & (1 << 63) != 0 {
                         continue 'next_callstack;
@@ -707,22 +712,22 @@ const MAX_SYM_LEN: usize = 8 * 1024;
 #[allow(non_snake_case)]
 #[derive(Clone)]
 #[repr(C)]
-pub struct SYMBOL_INFO_WITH_STRING {
-    pub SizeOfStruct: u32,
-    pub TypeIndex: u32,
-    pub Reserved: [u64; 2],
-    pub Index: u32,
-    pub Size: u32,
-    pub ModBase: u64,
-    pub Flags: SYMBOL_INFO_FLAGS,
-    pub Value: u64,
-    pub Address: u64,
-    pub Register: u32,
-    pub Scope: u32,
-    pub Tag: u32,
-    pub NameLen: u32,
-    pub MaxNameLen: u32,
-    pub Name: [u8; MAX_SYM_LEN],
+struct SYMBOL_INFO_WITH_STRING {
+    SizeOfStruct: u32,
+    TypeIndex: u32,
+    Reserved: [u64; 2],
+    Index: u32,
+    Size: u32,
+    ModBase: u64,
+    Flags: SYMBOL_INFO_FLAGS,
+    Value: u64,
+    Address: u64,
+    Register: u32,
+    Scope: u32,
+    Tag: u32,
+    NameLen: u32,
+    MaxNameLen: u32,
+    Name: [u8; MAX_SYM_LEN],
 }
 
 // HANDLE must have been used to initialize a DbgHelp symbol session via SymInitialize succesfully
