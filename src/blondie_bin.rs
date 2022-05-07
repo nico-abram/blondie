@@ -13,12 +13,12 @@ struct Blondie {
     /// If kernel stacks should be included in the output
     #[clap(short, long)]
     kernel_stacks: bool,
-    /// Output filename. Defaults to flamegraph.svg
+    /// Output filename
     #[clap(short, long, parse(from_os_str))]
     out: Option<std::path::PathBuf>,
-    /// Don't redirect stdout/stderr from the target process
+    /// Don't redirect stdout/stderr from the target process to blondie
     #[clap(short, long)]
-    hide_output: bool,
+    no_redirect: bool,
 
     #[clap(subcommand)]
     subcommand: Subcommands,
@@ -58,6 +58,10 @@ fn main() -> Result<(), blondie::Error> {
     };
     let mut command_builder = std::process::Command::new(command);
     command_builder.args(command_args);
+    if args.no_redirect {
+        command_builder.stdout(std::process::Stdio::null());
+        command_builder.stderr(std::process::Stdio::null());
+    }
     let trace_ctx = blondie::trace_command(command_builder, args.kernel_stacks)?;
 
     match &args.subcommand {
