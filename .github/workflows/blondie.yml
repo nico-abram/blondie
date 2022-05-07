@@ -40,9 +40,6 @@ jobs:
         toolchain: ${{ matrix.rust }}
         default: true
 
-    - name: Download deps
-      run: sudo apt update && sudo apt install -y clang libclang-dev libopencv-dev
-
     - name: Build
       run: cargo build --release --all-features --verbose
 
@@ -73,4 +70,4 @@ jobs:
           default: true
 
       - name: Build docs
-        run: cargo doc -vv --features=docs-only
+        run: cargo doc -vv
