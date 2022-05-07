@@ -30,6 +30,10 @@ This is built using the ETW(Event Tracing for Windows)]() API to collect CPU sam
 
 # Example output
 
+Example flamegraph from a hello world rust program:
+
+<img src="./img/example_output.png">
+
 Here's a bit of example output from running blondie on [dust](https://github.com/bootandy/dust):
 
 <details>
