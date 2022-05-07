@@ -106,13 +106,14 @@ const MAX_STACK_DEPTH: usize = 200;
 pub enum Error {
     /// Blondie requires administrator privileges
     NotAnAdmin,
-    /// The processing thread panicked and we don't know why
-    UnknownError,
     /// Error spawning a suspended process
     SpawnErr(std::io::Error),
     /// Error waiting for child
     WaitOnChildErr(std::io::Error),
+    /// A call to a windows API function returned an error and we didn't know how to handle it
     Other(WIN32_ERROR, String, &'static str),
+    /// This should never happen
+    UnknownError,
 }
 type Result<T> = std::result::Result<T, Error>;
 
