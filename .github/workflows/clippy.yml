@@ -1,0 +1,21 @@
+name: Clippy check
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+jobs:
+  clippy_check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - run: rustup component add clippy
+      
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          toolchain: stable
+#          args: --all-features
