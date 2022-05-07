@@ -1,8 +1,8 @@
 //! blondie is a rust library to do callstack sampling of a process on windows.
 //!
-//! You can use [`trace_command`] to execute and sample an std [`std::process::Command`].
+//! You can use [`trace_command`] to execute and sample an [`std::process::Command`].
 //!
-//! Or you can use [`trace_child`] to start tracing an std [`std::process::Child`].
+//! Or you can use [`trace_child`] to start tracing an [`std::process::Child`].
 // You can also trace an arbitrary process using [`trace_pid`].
 
 use windows::core::{GUID, PCSTR, PCWSTR, PSTR};
