@@ -10,13 +10,13 @@ fn main() -> Result<(), blondie::Error> {
         .unwrap()
         .0;
     let args = &args[dash_c_idx + 1..];
-    let mut args_v = vec![];
+    let mut _args_v = vec![];
     let mut arg0 = args[0].clone();
     let mut other_args = &args[1..];
     if other_args.is_empty() {
         let mut it = arg0.to_str().unwrap().split_whitespace();
         let arg0_str = std::ffi::OsStr::new(it.next().unwrap());
-        args_v = it
+        _args_v = it
             .map(|s| std::ffi::OsStr::new(s).to_os_string())
             .collect::<Vec<_>>();
         other_args = &args_v[..];

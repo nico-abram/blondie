@@ -19,7 +19,7 @@ Examples:
 
 I wrote this to be able to get flamegraphs using https://github.com/flamegraph-rs on windows.
 
-This is built using the ETW(Event Tracing for Windows)]() API to collect CPU samples and DLL/EXE load events, and the [DbgHelp Symbol Handler API](https://docs.microsoft.com/en-us/windows/win32/debug/dbghelp-functions#symbol-handler) to translate the virtual addresses ETW gives us to symbol names.
+This is built using the [ETW(Event Tracing for Windows)](https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/event-tracing-for-windows--etw-) API to collect CPU samples and DLL/EXE load events, and the [DbgHelp Symbol Handler API](https://docs.microsoft.com/en-us/windows/win32/debug/dbghelp-functions#symbol-handler) to translate the virtual addresses ETW gives us to symbol names.
 
 # Future work?
 
