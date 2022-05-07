@@ -30,6 +30,7 @@ use windows::Win32::System::Diagnostics::Etw::{
     PROCESS_TRACE_MODE_EVENT_RECORD, PROCESS_TRACE_MODE_RAW_TIMESTAMP,
     PROCESS_TRACE_MODE_REAL_TIME, TRACE_PROFILE_INTERVAL, WNODE_FLAG_TRACED_GUID,
 };
+use windows::Win32::System::SystemInformation::{GetVersionExA, OSVERSIONINFOA};
 use windows::Win32::System::SystemServices::SE_SYSTEM_PROFILE_NAME;
 use windows::Win32::System::Threading::{
     GetCurrentProcess, GetCurrentThread, OpenProcessToken, SetThreadPriority, CREATE_SUSPENDED,
@@ -114,6 +115,8 @@ pub enum Error {
     WaitOnChildErr(std::io::Error),
     /// A call to a windows API function returned an error and we didn't know how to handle it
     Other(WIN32_ERROR, String, &'static str),
+    /// We require Windows 7 or greater
+    UnsupportedOsVersion,
     /// This should never happen
     UnknownError,
 }
@@ -212,15 +215,32 @@ unsafe fn trace_from_process(
     is_suspended: bool,
     kernel_stacks: bool,
 ) -> Result<TraceContext> {
+    let mut winver_info = OSVERSIONINFOA::default();
+    winver_info.dwOSVersionInfoSize = size_of::<OSVERSIONINFOA>() as u32;
+    let ret = GetVersionExA(&mut winver_info);
+    if ret.0 == 0 {
+        return Err(get_last_error("TraceSetInformation interval"));
+    }
+    // If we're not win7 or more, return unsupported
+    // https://docs.microsoft.com/en-us/windows/win32/sysinfo/operating-system-version
+    if winver_info.dwMajorVersion < 6
+        || (winver_info.dwMajorVersion == 6 && winver_info.dwMinorVersion == 0)
+    {
+        return Err(Error::UnsupportedOsVersion);
+    }
     acquire_priviledges()?;
 
     // Set the sampling interval
+    // Only for Win8 or more
+    if winver_info.dwMajorVersion > 6
+        || (winver_info.dwMajorVersion == 6 && winver_info.dwMinorVersion >= 2)
     {
         let mut interval = TRACE_PROFILE_INTERVAL::default();
         // TODO: Parameter?
         interval.Interval = (1000000000 / 8000) / 100;
         let ret = TraceSetInformation(
             0,
+            // The value is supported on Windows 8, Windows Server 2012, and later.
             TraceSampledProfileIntervalInfo,
             addr_of!(interval).cast(),
             size_of::<TRACE_PROFILE_INTERVAL>() as u32,
@@ -418,13 +438,32 @@ unsafe fn trace_from_process(
 
         let stack_depth_32 = ((*record).UserDataLength - 16) / 4;
         let stack_depth_64 = stack_depth_32 / 2;
-        let mut stack = [0u64; MAX_STACK_DEPTH];
-        let mut stack_addrs =
-            std::slice::from_raw_parts(ud_p.cast::<u64>().offset(2), stack_depth_64 as usize);
+        let stack_depth = if size_of::<usize>() == 8 {
+            stack_depth_64
+        } else {
+            stack_depth_32
+        };
+
+        let mut tmp = vec![];
+        let mut stack_addrs = if size_of::<usize>() == 8 {
+            std::slice::from_raw_parts(ud_p.cast::<u64>().offset(2), stack_depth as usize)
+        } else {
+            tmp.extend(
+                std::slice::from_raw_parts(
+                    ud_p.cast::<u64>().offset(2).cast::<u32>(),
+                    stack_depth as usize,
+                )
+                .iter()
+                .map(|x| *x as u64),
+            );
+            &tmp
+        };
         if stack_addrs.len() > MAX_STACK_DEPTH {
             stack_addrs = &stack_addrs[(stack_addrs.len() - MAX_STACK_DEPTH)..];
         }
-        stack[..(stack_depth_64 as usize).min(MAX_STACK_DEPTH)].copy_from_slice(stack_addrs);
+
+        let mut stack = [0u64; MAX_STACK_DEPTH];
+        stack[..(stack_depth as usize).min(MAX_STACK_DEPTH)].copy_from_slice(stack_addrs);
 
         let entry = context.stack_counts_hashmap.entry(stack);
         *entry.or_insert(0) += 1;
@@ -703,17 +742,18 @@ impl CollectionResults {
     }
 }
 
+// https://docs.microsoft.com/en-us/windows/win32/etw/image-load
 #[allow(non_snake_case)]
 #[derive(Debug)]
 #[repr(C)]
 struct ImageLoadEvent {
-    ImageBase: u64,
-    ImageSize: u64,
+    ImageBase: usize,
+    ImageSize: usize,
     ProcessId: u32,
     ImageCheckSum: u32,
     TimeDateStamp: u32,
     Reserved0: u32,
-    DefaultBase: u64,
+    DefaultBase: usize,
     Reserved1: u32,
     Reserved2: u32,
     Reserved3: u32,

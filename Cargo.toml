@@ -30,7 +30,8 @@ windows = { version = "0.36.1", features = [
     "Win32_System_Diagnostics_Debug",
     "Win32_System_LibraryLoader",
     "Win32_System_WindowsProgramming",
-    "Win32_Storage_FileSystem"
+    "Win32_Storage_FileSystem",
+    "Win32_System_SystemInformation"
 ] }
 rustc-hash = "1.1.0"
 # Only for the binary crate
