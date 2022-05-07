@@ -564,6 +564,8 @@ pub fn trace_command(
     }))
 }
 /// A callstack and the count of samples it was found in
+///
+/// You can get them using [`CollectionResults::iter_callstacks`]
 pub struct CallStack<'a> {
     ctx: &'a TraceContext,
     stack: &'a [u64; MAX_STACK_DEPTH],
@@ -571,6 +573,8 @@ pub struct CallStack<'a> {
 }
 
 /// An address from a callstack
+///
+/// You can get them using [`CallStack::iter_resolved_addresses`]
 pub struct Address {
     /// Sample Address
     pub addr: u64,
@@ -582,6 +586,9 @@ pub struct Address {
     pub image_name: Option<String>,
 }
 impl<'a> CallStack<'a> {
+    /// Iterate addresses in this callstack
+    ///
+    /// This also performs symbol resolution if possible, and tries to find the image (DLL/EXE) it comes from
     pub fn iter_resolved_addresses(&'a self) -> impl std::iter::Iterator<Item = Address> + 'a {
         self.stack
             .iter()
@@ -639,6 +646,7 @@ impl<'a> CallStack<'a> {
     }
 }
 impl CollectionResults {
+    /// Iterate the distinct callstacks sampled in this execution
     pub fn iter_callstacks<'a>(&'a self) -> impl std::iter::Iterator<Item = CallStack<'a>> + 'a {
         self.0.stack_counts_hashmap.iter().map(|x| CallStack {
             ctx: &self.0,
