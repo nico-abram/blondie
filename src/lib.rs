@@ -732,7 +732,7 @@ impl CollectionResults {
                     }
                 } else {
                     // Symbol not found
-                    writeln!(w, "\t\t{address:X}").unwrap();
+                    writeln!(w, "\t\t`0x{address:X}").unwrap();
                 }
             }
             let count = callstack.sample_count;
