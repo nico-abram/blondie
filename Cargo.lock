@@ -196,9 +196,9 @@ dependencies = [
 
 [[package]]
 name = "inferno"
-version = "0.11.3"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16d4bde3a7105e59c66a4104cfe9606453af1c7a0eac78cb7d5bc263eb762a70"
+checksum = "70acd717b8821298c8b801f32684864ead3a3a470f1485a716ebb4343f9e42d7"
 dependencies = [
  "ahash",
  "atty",
@@ -209,10 +209,10 @@ dependencies = [
  "env_logger",
  "indexmap",
  "itoa 1.0.1",
- "lazy_static",
  "log",
  "num-format",
  "num_cpus",
+ "once_cell",
  "quick-xml",
  "rgb",
  "str_stack",
@@ -295,9 +295,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.10.0"
+version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
+checksum = "e82dad04139b71a90c080c8463fe0dc7902db5192d939bd0950f074d014339e1"
 
 [[package]]
 name = "os_str_bytes"
@@ -340,9 +340,9 @@ dependencies = [
 
 [[package]]
 name = "quick-xml"
-version = "0.22.0"
+version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8533f14c8382aaad0d592c812ac3b826162128b65662331e1127b45c3d18536b"
+checksum = "11bafc859c6815fbaffbbbf4229ecb767ac913fecb27f9ad4343662e9ef099ea"
 dependencies = [
  "memchr",
 ]
