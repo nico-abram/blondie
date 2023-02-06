@@ -54,9 +54,7 @@ struct TraceContext {
     trace_running: AtomicBool,
     show_kernel_samples: bool,
 
-    /// (image_path, image_base, image_size, pdb_path)
-    /// These are paths of the form "\Device\HardDiskVolume"
-    /// pdb_path is None after tracing if no pdb was found
+    /// (image_path, image_base, image_size)
     image_paths: Vec<(OsString, u64, u64)>,
 }
 impl TraceContext {
@@ -512,6 +510,7 @@ unsafe fn trace_from_process(
         // TODO: Do something less gross here
         // std Command/Child do not expose the main thread handle or id, so we can't easily call ResumeThread
         // Therefore, we call the undocumented NtResumeProcess. We should probably manually call CreateProcess.
+        // Now that https://github.com/rust-lang/rust/issues/96723 is merged, we could use that on nightly
         let ntdll =
             windows::Win32::System::LibraryLoader::GetModuleHandleA(PCSTR("ntdll.dll\0".as_ptr()))
                 .expect("Could not find ntdll.dll");
@@ -620,118 +619,107 @@ enum PdbContents {
 }
 */
 type OwnedPdb = ContextPdbData<'static, 'static, std::io::Cursor<Vec<u8>>>;
-fn owned_pdb(pdb_file_bytes: Vec<u8>) -> Option<OwnedPdb> {
-    let pdb = PDB::open(std::io::Cursor::new(pdb_file_bytes)).ok()?;
-    pdb_addr2line::ContextPdbData::try_from_pdb(pdb).ok()
-}
-/// (image_base, image_size, image_name, addr2line pdb context)
-type ModuleData = (u64, u64, OsString, OwnedPdb);
-struct PdbDb {
-    pdb_db: std::collections::BTreeMap<u64, ModuleData>,
-}
-type PdbDbP<'a, 'b> =
+type PdbDb<'a, 'b> =
     std::collections::BTreeMap<u64, (u64, u64, OsString, pdb_addr2line::Context<'a, 'b>)>;
-impl PdbDb {
-    fn build(images: &[(OsString, u64, u64)]) -> Self {
-        let mut pdb_db = std::collections::BTreeMap::new();
 
-        // TODO: Warn if we can't use tokio?
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build();
-        for (path, image_base, image_size) in images {
-            let path_str = match path.to_str() {
+/// Returns Vec<(image_base, image_size, image_name, addr2line pdb context)>
+fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedPdb)> {
+    let mut pdb_db = Vec::with_capacity(images.len());
+
+    fn owned_pdb(pdb_file_bytes: Vec<u8>) -> Option<OwnedPdb> {
+        let pdb = PDB::open(std::io::Cursor::new(pdb_file_bytes)).ok()?;
+        pdb_addr2line::ContextPdbData::try_from_pdb(pdb).ok()
+    }
+
+    // TODO: Warn if we can't use tokio?
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build();
+    for (path, image_base, image_size) in images {
+        let path_str = match path.to_str() {
+            Some(x) => x,
+            _ => continue,
+        };
+        // Convert the \Device\HardDiskVolume path to a verbatim path \\?\HardDiskVolume
+        let verbatim_path_os: OsString = path_str
+            .trim_end_matches('\0')
+            .replacen("\\Device\\", "\\\\?\\", 1)
+            .into();
+
+        let path = PathBuf::from(verbatim_path_os);
+
+        let image_contents = match std::fs::read(&path) {
+            Ok(x) => x,
+            _ => continue,
+        };
+        let image_name = path.file_name().unwrap();
+        let pe_file = match object::File::parse(&image_contents[..]) {
+            Ok(x) => x,
+            _ => continue,
+        };
+
+        let (pdb_path, pdb_guid, pdb_age) = match pe_file.pdb_info() {
+            Ok(Some(x)) => (x.path(), x.guid(), x.age()),
+            _ => continue,
+        };
+        let pdb_path = match std::str::from_utf8(pdb_path) {
+            Ok(x) => x,
+            _ => continue,
+        };
+        let pdb_path = PathBuf::from(pdb_path);
+        if pdb_path.exists() {
+            let mut file = match std::fs::File::open(pdb_path) {
+                Err(_) => continue,
+                Ok(x) => x,
+            };
+            let mut file_bytes = Vec::with_capacity(0);
+            if file.read_to_end(&mut file_bytes).is_err() {
+                continue;
+            }
+            let pdb_ctx = match owned_pdb(file_bytes) {
                 Some(x) => x,
                 _ => continue,
             };
-            // Convert the \Device\HardDiskVolume path to a verbatim path \\?\HardDiskVolume
-            let verbatim_path_os: OsString = path_str
-                .trim_end_matches('\0')
-                .replacen("\\Device\\", "\\\\?\\", 1)
-                .into();
 
-            let path = PathBuf::from(verbatim_path_os);
-
-            let image_contents = match std::fs::read(&path) {
-                Ok(x) => x,
-                _ => continue,
-            };
-            let image_name = path.file_name().unwrap();
-            let pe_file = match object::File::parse(&image_contents[..]) {
-                Ok(x) => x,
+            pdb_db.push((*image_base, *image_size, image_name.to_owned(), pdb_ctx));
+        } else {
+            let pdb_filename = match pdb_path.file_name() {
+                Some(x) => x,
                 _ => continue,
             };
 
-            let (pdb_path, pdb_guid, pdb_age) = match pe_file.pdb_info() {
-                Ok(Some(x)) => (x.path(), x.guid(), x.age()),
-                _ => continue,
-            };
-            let pdb_path = match std::str::from_utf8(pdb_path) {
-                Ok(x) => x,
-                _ => continue,
-            };
-            let pdb_path = PathBuf::from(pdb_path);
-            if pdb_path.exists() {
-                let mut file = match std::fs::File::open(pdb_path) {
-                    Err(_) => continue,
-                    Ok(x) => x,
-                };
-                let mut file_bytes = Vec::with_capacity(0);
-                if file.read_to_end(&mut file_bytes).is_err() {
-                    continue;
-                }
-                let pdb_ctx = match owned_pdb(file_bytes) {
-                    Some(x) => x,
-                    _ => continue,
-                };
+            let symbol_cache =
+                symsrv::SymbolCache::new(symsrv::get_symbol_path_from_environment(""), false);
 
-                pdb_db.insert(
-                    *image_base,
-                    (*image_base, *image_size, image_name.to_owned(), pdb_ctx),
-                );
-            } else {
-                let pdb_filename = match pdb_path.file_name() {
-                    Some(x) => x,
-                    _ => continue,
-                };
+            let mut guid_string = String::new();
+            use std::fmt::Write;
+            for byte in pdb_guid[..4].iter().rev() {
+                write!(&mut guid_string, "{byte:02X}").unwrap();
+            }
+            write!(&mut guid_string, "{:02X}", pdb_guid[5]).unwrap();
+            write!(&mut guid_string, "{:02X}", pdb_guid[4]).unwrap();
+            write!(&mut guid_string, "{:02X}", pdb_guid[7]).unwrap();
+            write!(&mut guid_string, "{:02X}", pdb_guid[6]).unwrap();
+            for byte in &pdb_guid[8..] {
+                write!(&mut guid_string, "{byte:02X}").unwrap();
+            }
+            write!(&mut guid_string, "{pdb_age:X}").unwrap();
+            let guid_str = std::ffi::OsStr::new(&guid_string);
 
-                let symbol_cache =
-                    symsrv::SymbolCache::new(symsrv::get_symbol_path_from_environment(""), false);
+            let relative_path: PathBuf = [pdb_filename, guid_str, pdb_filename].iter().collect();
 
-                let mut guid_string = String::new();
-                use std::fmt::Write;
-                for byte in pdb_guid[..4].iter().rev() {
-                    write!(&mut guid_string, "{:02X}", byte).unwrap();
-                }
-                write!(&mut guid_string, "{:02X}", pdb_guid[5]).unwrap();
-                write!(&mut guid_string, "{:02X}", pdb_guid[4]).unwrap();
-                write!(&mut guid_string, "{:02X}", pdb_guid[7]).unwrap();
-                write!(&mut guid_string, "{:02X}", pdb_guid[6]).unwrap();
-                for byte in &pdb_guid[8..] {
-                    write!(&mut guid_string, "{:02X}", byte).unwrap();
-                }
-                write!(&mut guid_string, "{:X}", pdb_age).unwrap();
-                let guid_str = std::ffi::OsStr::new(&guid_string);
-
-                let relative_path: PathBuf =
-                    [pdb_filename, guid_str, pdb_filename].iter().collect();
-
-                if let Ok(rt) = &rt {
-                    if let Ok(file_contents) = rt.block_on(symbol_cache.get_pdb(&relative_path)) {
-                        let pdb_ctx = match owned_pdb(file_contents.to_vec()) {
-                            Some(x) => x,
-                            _ => continue,
-                        };
-                        pdb_db.insert(
-                            *image_base,
-                            (*image_base, *image_size, image_name.to_owned(), pdb_ctx),
-                        );
-                    }
+            if let Ok(rt) = &rt {
+                if let Ok(file_contents) = rt.block_on(symbol_cache.get_pdb(&relative_path)) {
+                    let pdb_ctx = match owned_pdb(file_contents.to_vec()) {
+                        Some(x) => x,
+                        _ => continue,
+                    };
+                    pdb_db.push((*image_base, *image_size, image_name.to_owned(), pdb_ctx));
                 }
             }
         }
-        Self { pdb_db }
     }
+    pdb_db
 }
 impl<'a> CallStack<'a> {
     /// Iterate addresses in this callstack
@@ -741,7 +729,7 @@ impl<'a> CallStack<'a> {
         F: for<'b> FnMut(u64, u64, &'b [&'b str], Option<&'b str>) -> Result<()>,
     >(
         &'a self,
-        pdb_db: &'a PdbDbP,
+        pdb_db: &'a PdbDb,
         v: &mut Vec<&'_ str>,
         mut f: F,
     ) -> Result<()> {
@@ -753,7 +741,7 @@ impl<'a> CallStack<'a> {
             v.into_iter().map(|_| unreachable!()).collect()
         }
         let displacement = 0u64;
-        let mut symbol_names_storage = reuse_vec(std::mem::replace(v, vec![]));
+        let mut symbol_names_storage = reuse_vec(std::mem::take(v));
         for &addr in self.stack {
             if addr == 0 {
                 *v = symbol_names_storage;
@@ -801,27 +789,21 @@ impl CollectionResults {
     }
     /// Resolve call stack symbols and write a dtrace-like sampling report to `w`
     pub fn write_dtrace<W: Write>(&self, mut w: W) -> Result<()> {
-        let mut pdb_db = PdbDb::build(&self.0.image_paths);
-        let db: PdbDbP = pdb_db
-            .pdb_db
+        let pdbs = find_pdbs(&self.0.image_paths);
+        let pdb_db: PdbDb = pdbs
             .iter()
-            .map(|(x, (a, b, c, d))| (*x, (*a, *b, c.clone(), d.make_context())))
-            .filter_map(|(x, (a, b, c, d))| d.ok().map(|d| (x, (a, b, c, d))))
+            .filter_map(|(a, b, c, d)| d.make_context().ok().map(|d| (*a, (*a, *b, c.clone(), d))))
             .collect::<std::collections::BTreeMap<_, _>>();
         let mut v = vec![];
 
-        'next_callstack: for callstack in self.iter_callstacks() {
-            //for resolved_addr in callstack.iter_resolved_addresses(&mut pdb_db) {
+        for callstack in self.iter_callstacks() {
             callstack.iter_resolved_addresses2(
-                &db,
+                &pdb_db,
                 &mut v,
                 |address, displacement, symbol_names, image_name| {
-                    //let displacement = displacement;
-                    //let address = addr;
                     if !self.0.show_kernel_samples {
                         // kernel addresses have the highest bit set on windows
                         if address & (1 << 63) != 0 {
-                            //continue 'next_callstack;
                             return Ok(());
                         }
                     }
