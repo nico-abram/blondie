@@ -37,6 +37,13 @@ rustc-hash = "1.1.0"
 # Only for the binary crate
 inferno = { version = "0.11", optional = true }
 clap = { version = "3.1", optional = true }
+# For symbol resolution
+pdb-addr2line = "0.7.1"
+symsrv = "0.1.2"
+# Needed for symsrv
+tokio = { version = "1.17.0", features = ["fs", "rt"] }
+# To extract pdb paths from image files
+object = "0.28.4"
 
 [profile.release]
 debug = true

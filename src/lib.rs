@@ -7,6 +7,7 @@
 
 #![allow(clippy::field_reassign_with_default)]
 
+use object::Object;
 use windows::core::{GUID, PCSTR, PCWSTR, PSTR};
 use windows::Win32::Foundation::{
     CloseHandle, DuplicateHandle, GetLastError, DUPLICATE_SAME_ACCESS, ERROR_SUCCESS,
@@ -17,10 +18,8 @@ use windows::Win32::Security::{
     TOKEN_PRIVILEGES,
 };
 use windows::Win32::System::Diagnostics::Debug::{
-    FormatMessageA, SymCleanup, SymFromAddr, SymGetModuleInfo64, SymGetOptions, SymInitialize,
-    SymLoadModuleExW, SymRefreshModuleList, SymSetOptions, FORMAT_MESSAGE_FROM_SYSTEM,
-    FORMAT_MESSAGE_IGNORE_INSERTS, IMAGEHLP_MODULE64, SYMBOL_INFO_FLAGS, SYMOPT_DEBUG,
-    SYM_LOAD_FLAGS,
+    FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM, FORMAT_MESSAGE_IGNORE_INSERTS, IMAGEHLP_MODULE64,
+    SYMBOL_INFO_FLAGS, SYMOPT_DEBUG, SYM_LOAD_FLAGS,
 };
 use windows::Win32::System::Diagnostics::Etw::{
     CloseTrace, ControlTraceA, OpenTraceA, ProcessTrace, StartTraceA, SystemTraceControlGuid,
@@ -37,13 +36,16 @@ use windows::Win32::System::Threading::{
     THREAD_PRIORITY_TIME_CRITICAL,
 };
 
+use pdb_addr2line::pdb::PDB;
+
 use std::ffi::OsString;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::mem::size_of;
 use std::os::windows::{
     ffi::{OsStrExt, OsStringExt},
     prelude::AsRawHandle,
 };
+use std::path::PathBuf;
 use std::ptr::{addr_of, addr_of_mut, null_mut};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -55,6 +57,11 @@ struct TraceContext {
     target_proc_pid: u32,
     trace_running: AtomicBool,
     show_kernel_samples: bool,
+
+    /// (image_path, image_base, image_size, pdb_path)
+    /// These are paths of the form "\Device\HardDiskVolume"
+    /// pdb_path is None after tracing if no pdb was found
+    image_paths: Vec<(OsString, u64, u64, Option<(OsString, PathBuf)>)>,
 }
 impl TraceContext {
     /// The Context takes ownership of the handle.
@@ -66,12 +73,6 @@ impl TraceContext {
         target_proc_pid: u32,
         kernel_stacks: bool,
     ) -> Result<Self> {
-        SymSetOptions(SymGetOptions() | SYMOPT_DEBUG);
-        let ret = SymInitialize(target_process_handle, PCSTR(null_mut()), false);
-        if ret.0 != 1 {
-            return Err(get_last_error("TraceContext::new SymInitialize"));
-        }
-
         Ok(Self {
             target_process_handle,
             stack_counts_hashmap: Default::default(),
@@ -83,6 +84,7 @@ impl TraceContext {
                     ["Y", "YES", "TRUE"].iter().any(|truthy| &upper == truthy)
                 })
                 .unwrap_or(kernel_stacks),
+            image_paths: Vec::with_capacity(1024),
         })
     }
 }
@@ -90,10 +92,6 @@ impl Drop for TraceContext {
     fn drop(&mut self) {
         // SAFETY: TraceContext invariants ensure these are valid
         unsafe {
-            let ret = SymCleanup(self.target_process_handle);
-            if ret.0 != 1 {
-                panic!("TraceContext::SymCleanup error:{:?}", get_last_error(""));
-            }
             let ret = CloseHandle(self.target_process_handle);
             if ret.0 == 0 {
                 panic!("TraceContext::CloseHandle error:{:?}", get_last_error(""));
@@ -377,45 +375,16 @@ unsafe fn trace_from_process(
                 .cast::<ImageLoadEvent>()
                 .offset(1)
                 .cast::<u16>();
-            let filename_str = OsString::from_wide(std::slice::from_raw_parts(
+            let filename_os_string = OsString::from_wide(std::slice::from_raw_parts(
                 filename_p,
                 ((*record).UserDataLength as usize - size_of::<ImageLoadEvent>()) / 2,
             ));
-            let filename_str = filename_str.to_str().unwrap();
-            let image_base = event.ImageBase;
-
-            // Convert the \Device\HardDiskVolume path to a verbatim path \\?\HardDiskVolume
-            let verbatim_path_os: OsString =
-                filename_str.replacen("\\Device\\", "\\\\?\\", 1).into();
-            let verbatim_path = verbatim_path_os
-                .encode_wide()
-                .chain(Some(0))
-                .collect::<Vec<_>>();
-
-            let ret = SymLoadModuleExW(
-                context.target_process_handle,
-                HANDLE(0),
-                PCWSTR(verbatim_path.as_ptr()),
-                PCWSTR(null_mut()),
-                image_base as u64,
-                0,
-                null_mut(),
-                SYM_LOAD_FLAGS(0),
-            );
-            if ret == 0 {
-                if GetLastError() != ERROR_SUCCESS {
-                    // Otherwise "already loaded" which is fine
-                    println!(
-                        "Error loading module in_path:{} verbatim_path:{} GetLastError:{:?} base_of_image:{}",
-                        filename_str,
-                        verbatim_path_os.to_string_lossy(),
-                        get_last_error(""),
-                        image_base
-                    );
-                }
-                return;
-            }
-            SymRefreshModuleList(context.target_process_handle);
+            context.image_paths.push((
+                filename_os_string,
+                event.ImageBase as u64,
+                event.ImageSize as u64,
+                None,
+            ));
 
             return;
         }
@@ -468,43 +437,48 @@ unsafe fn trace_from_process(
         let entry = context.stack_counts_hashmap.entry(stack);
         *entry.or_insert(0) += 1;
 
-        /*
-        #[repr(C)]
-        #[derive(Debug)]
-        #[allow(non_snake_case)]
-        struct EVENT_HEADERR {
-            Size: u16,
-            HeaderType: u16,
-            Flags: u16,
-            EventProperty: u16,
-            ThreadId: u32,
-            ProcessId: u32,
-            TimeStamp: i64,
-            ProviderId: ::windows::core::GUID,
-            EventDescriptor: windows::Win32::System::Diagnostics::Etw::EVENT_DESCRIPTOR,
-            KernelTime: u32,
-            UserTime: u32,
-            ProcessorTime: u64,
-            ActivityId: ::windows::core::GUID,
+        const DEBUG_OUTPUT_EVENTS: bool = false;
+        if DEBUG_OUTPUT_EVENTS {
+            #[repr(C)]
+            #[derive(Debug)]
+            #[allow(non_snake_case)]
+            struct EVENT_HEADERR {
+                Size: u16,
+                HeaderType: u16,
+                Flags: u16,
+                EventProperty: u16,
+                ThreadId: u32,
+                ProcessId: u32,
+                TimeStamp: i64,
+                ProviderId: ::windows::core::GUID,
+                EventDescriptor: windows::Win32::System::Diagnostics::Etw::EVENT_DESCRIPTOR,
+                KernelTime: u32,
+                UserTime: u32,
+                ProcessorTime: u64,
+                ActivityId: ::windows::core::GUID,
+            }
+            #[repr(C)]
+            #[derive(Debug)]
+            #[allow(non_snake_case)]
+            struct EVENT_RECORDD {
+                EventHeader: EVENT_HEADERR,
+                BufferContextAnonymousProcessorNumber: u8,
+                BufferContextAnonymousAlignment: u8,
+                BufferContextAnonymousProcessorIndex: u16,
+                BufferContextLoggerId: u16,
+                ExtendedDataCount: u16,
+                UserDataLength: u16,
+                ExtendedData:
+                    *mut windows::Win32::System::Diagnostics::Etw::EVENT_HEADER_EXTENDED_DATA_ITEM,
+                UserData: *mut ::core::ffi::c_void,
+                UserContext: *mut ::core::ffi::c_void,
+            }
+            eprintln!(
+                "record {:?} {:?} proc:{proc} thread:{_thread}",
+                (*record.cast::<EVENT_RECORDD>()),
+                stack
+            );
         }
-        #[repr(C)]
-        #[derive(Debug)]
-        #[allow(non_snake_case)]
-        struct EVENT_RECORDD {
-            EventHeader: EVENT_HEADERR,
-            BufferContextAnonymousProcessorNumber: u8,
-            BufferContextAnonymousAlignment: u8,
-            BufferContextAnonymousProcessorIndex: u16,
-            BufferContextLoggerId: u16,
-            ExtendedDataCount: u16,
-            UserDataLength: u16,
-            ExtendedData:
-                *mut windows::Win32::System::Diagnostics::Etw::EVENT_HEADER_EXTENDED_DATA_ITEM,
-            UserData: *mut ::core::ffi::c_void,
-            UserContext: *mut ::core::ffi::c_void,
-        }
-        eprintln!(            "record {:?} {:?} proc:{proc} thread:{_thread}",            (*record.cast::<EVENT_RECORDD>()),            stack        );
-        */
     }
     log.Anonymous2.EventRecordCallback = Some(event_record_callback);
 
@@ -567,7 +541,15 @@ unsafe fn trace_from_process(
         return Err(Error::UnknownError);
     }
 
-    SymRefreshModuleList(context.target_process_handle);
+    if context.show_kernel_samples {
+        let kernel_module_paths = list_kernel_modules();
+        context.image_paths.extend(
+            kernel_module_paths
+                .into_iter()
+                .map(|(path, image_base, image_size)| (path, image_base, image_size, None)),
+        );
+    }
+
     Ok(context)
 }
 
@@ -623,68 +605,200 @@ pub struct Address {
     pub addr: u64,
     /// Displacement into the symbol
     pub displacement: u64,
-    /// Symbol name
-    pub symbol_name: Option<String>,
+    /// Symbol names
+    pub symbol_names: Vec<String>,
     /// Imager (Exe or Dll) name
     pub image_name: Option<String>,
+}
+/*
+enum PdbContents {
+    FileContents(symsrv::FileContents),
+    File(std::fs::File),
+    Missing,
+}
+*/
+type ModuleData = (
+    u64,
+    u64,
+    OsString, /*, Option<PdbContents>*/
+    PDB<'static, std::io::Cursor<Vec<u8>>>,
+);
+struct PdbDb {
+    pdb_db: std::collections::BTreeMap<u64, ModuleData>,
+}
+impl PdbDb {
+    fn build(images: &[(OsString, u64, u64, Option<(OsString, PathBuf)>)]) -> Self {
+        let mut pdb_db = std::collections::BTreeMap::new();
+        for (path, image_base, image_size, out_pdb_path) in images {
+            // pdb_db.insert(
+            //     *image_base,
+            //     (*image_base, *image_size, image_name.to_owned(), None),
+            // );
+            let path_str = path.to_str().unwrap();
+            // Convert the \Device\HardDiskVolume path to a verbatim path \\?\HardDiskVolume
+            let verbatim_path_os: OsString = path_str
+                .trim_end_matches('\0')
+                .replacen("\\Device\\", "\\\\?\\", 1)
+                .into();
+
+            let path = PathBuf::from(verbatim_path_os);
+
+            let image_name = path.file_name().unwrap();
+            let image_contents = match std::fs::read(&path) {
+                Ok(x) => x,
+                _ => continue,
+            };
+            let pe_file = match object::File::parse(&image_contents[..]) {
+                Ok(x) => x,
+                _ => continue,
+            };
+
+            let (pdb_path, pdb_guid, pdb_age) = match pe_file.pdb_info() {
+                Ok(Some(x)) => (x.path(), x.guid(), x.age()),
+                _ => continue,
+            };
+            let pdb_path = std::str::from_utf8(pdb_path).unwrap();
+            let pdb_path = PathBuf::from(pdb_path);
+            if pdb_path.exists() {
+                let mut file = match std::fs::File::open(pdb_path) {
+                    Err(_) => continue,
+                    Ok(x) => x,
+                };
+                let mut file_bytes = Vec::with_capacity(0);
+                file.read_to_end(&mut file_bytes).unwrap();
+                let pdb = match PDB::open(std::io::Cursor::new(file_bytes)) {
+                    Err(_) => continue,
+                    Ok(x) => x,
+                };
+
+                pdb_db.insert(
+                    *image_base,
+                    (*image_base, *image_size, image_name.to_owned(), pdb),
+                );
+            } else {
+                let pdb_filename = match pdb_path.file_name() {
+                    Some(x) => x,
+                    _ => continue,
+                };
+
+                let symbol_cache =
+                    symsrv::SymbolCache::new(symsrv::get_symbol_path_from_environment(""), false);
+
+                let mut guid_string = String::new();
+                use std::fmt::Write;
+                for byte in pdb_guid[..4].iter().rev() {
+                    write!(&mut guid_string, "{:02X}", byte).unwrap();
+                }
+                write!(&mut guid_string, "{:02X}", pdb_guid[5]).unwrap();
+                write!(&mut guid_string, "{:02X}", pdb_guid[4]).unwrap();
+                write!(&mut guid_string, "{:02X}", pdb_guid[7]).unwrap();
+                write!(&mut guid_string, "{:02X}", pdb_guid[6]).unwrap();
+                for byte in &pdb_guid[8..] {
+                    write!(&mut guid_string, "{:02X}", byte).unwrap();
+                }
+                write!(&mut guid_string, "{:X}", pdb_age).unwrap();
+                let guid_str = std::ffi::OsStr::new(&guid_string);
+
+                let relative_path: PathBuf =
+                    [pdb_filename, guid_str, pdb_filename].iter().collect();
+                dbg!((&relative_path, &image_name));
+
+                let rt = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap();
+                if let Ok(file_contents) = rt.block_on(symbol_cache.get_pdb(&relative_path)) {
+                    //
+                    println!("yes");
+                    let pdb = match PDB::open(std::io::Cursor::new(file_contents.to_vec())) {
+                        Err(_) => continue,
+                        Ok(x) => x,
+                    };
+                    pdb_db.insert(
+                        *image_base,
+                        (*image_base, *image_size, image_name.to_owned(), pdb),
+                    );
+                }
+            }
+        }
+        Self { pdb_db }
+    }
+    fn get_module_mut(&mut self, addr: u64) -> Option<&mut ModuleData> {
+        self.pdb_db
+            .range_mut(..addr)
+            .rev()
+            .next()
+            .map(|(_, module)| module)
+    }
+    fn get_pdb(&mut self, addr: u64) -> Option<&PDB<'static, std::io::Cursor<Vec<u8>>>> {
+        let module = self.pdb_db.range(..addr).rev().next()?;
+        return Some(&module.1 .3);
+        // ret.image_name = module.1 .2.to_str().map(|x| x.to_owned());
+        // let addr_in_module = addr - module.0;
+        // if module.1.3.is_none() {
+        //     module.1.3 =
+        // }
+
+        // let file = std::fs::File::open(&module.1 .2).unwrap();
+        // let pdb = PDB::open(file).unwrap();
+        // None
+    }
 }
 impl<'a> CallStack<'a> {
     /// Iterate addresses in this callstack
     ///
     /// This also performs symbol resolution if possible, and tries to find the image (DLL/EXE) it comes from
-    pub fn iter_resolved_addresses(&'a self) -> impl std::iter::Iterator<Item = Address> + 'a {
+    fn iter_resolved_addresses(
+        &'a self,
+        pdb_db: &'a mut PdbDb,
+    ) -> impl std::iter::Iterator<Item = Address> + 'a {
         self.stack
             .iter()
             .take_while(|&&addr| addr != 0)
-            .map(|&addr| {
-                let mut symbol_name = None;
-                let mut image_name = None;
-
-                // Translate the address to a symbols string
-                let mut sym_info: SYMBOL_INFO_WITH_STRING = unsafe { std::mem::zeroed() };
-                sym_info.MaxNameLen = MAX_SYM_LEN as u32 - 4;
-                let offset_name2 = addr_of!(sym_info.Name) as usize - addr_of!(sym_info) as usize;
-                sym_info.SizeOfStruct = offset_name2 as u32 + 4;
-                let mut displacement = 0u64;
-                // SAFETY: sym_info is correctly initialized and TraceContext ensures target_process_handle is valid
-                let ret = unsafe {
-                    SymFromAddr(
-                        self.ctx.target_process_handle,
-                        addr,
-                        &mut displacement,
-                        addr_of_mut!(sym_info).cast(),
-                    )
-                };
-                if ret.0 == 1 {
-                    let name_addr = addr_of!(sym_info.Name);
-                    let sym_str =
-                        unsafe { std::ffi::CStr::from_ptr(name_addr.cast()).to_str().unwrap() };
-                    // TODO: Figure out a way to not allocate here? Might need GATs and LendingIterator
-                    symbol_name = Some(sym_str.to_string());
-
-                    // Get image(exe/dll) name
-                    let mut image_info = IMAGEHLP_MODULE64::default();
-                    image_info.SizeOfStruct = size_of::<IMAGEHLP_MODULE64>() as u32;
-                    // SAFETY: image_info is correctly initialized and TraceContext ensures target_process_handle is valid
-                    let ret = unsafe {
-                        SymGetModuleInfo64(self.ctx.target_process_handle, addr, &mut image_info)
-                    };
-                    if ret.0 == 1 {
-                        // SAFETY: image_info.ModuleName is initialized to all zeros and SymGetModuleInfo64 stores a null terminated string
-                        let image_name_str = unsafe {
-                            std::ffi::CStr::from_ptr(addr_of!(image_info.ModuleName).cast())
-                                .to_str()
-                                .unwrap()
-                        };
-                        image_name = Some(image_name_str.to_string());
-                    }
-                };
-                Address {
+            .map(move |&addr| {
+                let mut ret = Address {
                     addr,
-                    displacement,
-                    symbol_name,
-                    image_name,
+                    displacement: 0u64,
+                    symbol_names: vec![],
+                    image_name: None,
+                };
+
+                let module = pdb_db.get_module_mut(addr);
+                let module = match module {
+                    None => return ret,
+                    Some(x) => x,
+                };
+                // let module = pdb_db.range(..addr).rev().next();
+                // let module = match module {
+                //     None => return ret,
+                //     Some(x) => x,
+                // };
+                ret.image_name = module.2.to_str().map(|x| x.to_owned());
+                let addr_in_module = addr - module.0;
+
+                // let file = std::fs::File::open(module.1 .3.clone()).unwrap();
+                // let pdb = PDB::open(file).unwrap();
+                let context_data =
+                    match pdb_addr2line::ContextPdbData::try_from_pdb_ref(&mut module.3) {
+                        Ok(x) => x,
+                        _ => return ret,
+                    };
+                let context = match context_data.make_context() {
+                    Ok(x) => x,
+                    _ => return ret,
+                };
+                let procedure_frames = match context.find_frames(addr_in_module as u32) {
+                    Ok(Some(x)) => x,
+                    _ => return ret,
+                };
+                for frame in procedure_frames.frames {
+                    // TODO: tinyvec?
+                    ret.symbol_names.push(format!(
+                        "{}",
+                        frame.function.as_deref().unwrap_or("Unknown"),
+                    ));
                 }
+                ret
             })
     }
 }
@@ -699,13 +813,10 @@ impl CollectionResults {
     }
     /// Resolve call stack symbols and write a dtrace-like sampling report to `w`
     pub fn write_dtrace<W: Write>(&self, mut w: W) -> Result<()> {
-        if self.0.show_kernel_samples {
-            unsafe {
-                load_kernel_modules(self.0.target_process_handle);
-            }
-        }
+        let mut pdb_db = PdbDb::build(&self.0.image_paths);
+
         'next_callstack: for callstack in self.iter_callstacks() {
-            for resolved_addr in callstack.iter_resolved_addresses() {
+            for resolved_addr in callstack.iter_resolved_addresses(&mut pdb_db) {
                 let displacement = resolved_addr.displacement;
                 let address = resolved_addr.addr;
                 if !self.0.show_kernel_samples {
@@ -714,8 +825,8 @@ impl CollectionResults {
                         continue 'next_callstack;
                     }
                 }
-                if let Some(symbol_name) = resolved_addr.symbol_name {
-                    if let Some(image_name) = resolved_addr.image_name {
+                for symbol_name in &resolved_addr.symbol_names {
+                    if let Some(image_name) = &resolved_addr.image_name {
                         if displacement != 0 {
                             writeln!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}")
                                 .unwrap();
@@ -730,7 +841,8 @@ impl CollectionResults {
                             writeln!(w, "\t\t{symbol_name}").unwrap();
                         }
                     }
-                } else {
+                }
+                if resolved_addr.symbol_names.is_empty() {
                     // Symbol not found
                     writeln!(w, "\t\t`0x{address:X}").unwrap();
                 }
@@ -782,8 +894,8 @@ struct SYMBOL_INFO_WITH_STRING {
     Name: [u8; MAX_SYM_LEN],
 }
 
-// HANDLE must have been used to initialize a DbgHelp symbol session via SymInitialize succesfully
-unsafe fn load_kernel_modules(handle: HANDLE) {
+/// Returns a sequence of (image_file_path, image_base)
+fn list_kernel_modules() -> Vec<(OsString, u64, u64)> {
     // kernel module enumeration code based on http://www.rohitab.com/discuss/topic/40696-list-loaded-drivers-with-ntquerysysteminformation/
     #[link(name = "ntdll")]
     extern "system" {
@@ -799,77 +911,59 @@ unsafe fn load_kernel_modules(handle: HANDLE) {
     let mut out_buf = vec![0u8; BUF_LEN];
     let mut out_size = 0u32;
     // 11 = SystemModuleInformation
-    let retcode = NtQuerySystemInformation(
-        11,
-        out_buf.as_mut_ptr().cast(),
-        BUF_LEN as u32,
-        &mut out_size,
-    );
-    if retcode >= 0 {
-        let number_of_modules = out_buf.as_ptr().cast::<u32>().read_unaligned() as usize;
-        #[repr(C)]
-        #[derive(Debug)]
-        #[allow(non_snake_case)]
-        struct _RTL_PROCESS_MODULE_INFORMATION {
-            Section: *mut std::ffi::c_void,
-            MappedBase: *mut std::ffi::c_void,
-            ImageBase: *mut std::ffi::c_void,
-            ImageSize: u32,
-            Flags: u32,
-            LoadOrderIndex: u16,
-            InitOrderIndex: u16,
-            LoadCount: u16,
-            OffsetToFileName: u16,
-            FullPathName: [u8; 256],
-        }
+    let retcode = unsafe {
+        NtQuerySystemInformation(
+            11,
+            out_buf.as_mut_ptr().cast(),
+            BUF_LEN as u32,
+            &mut out_size,
+        )
+    };
+    if retcode < 0 {
+        println!("Failed to load kernel modules");
+        return vec![];
+    }
+    let number_of_modules = unsafe { out_buf.as_ptr().cast::<u32>().read_unaligned() as usize };
+    #[repr(C)]
+    #[derive(Debug)]
+    #[allow(non_snake_case)]
+    struct _RTL_PROCESS_MODULE_INFORMATION {
+        Section: *mut std::ffi::c_void,
+        MappedBase: *mut std::ffi::c_void,
+        ImageBase: *mut std::ffi::c_void,
+        ImageSize: u32,
+        Flags: u32,
+        LoadOrderIndex: u16,
+        InitOrderIndex: u16,
+        LoadCount: u16,
+        OffsetToFileName: u16,
+        FullPathName: [u8; 256],
+    }
+    let modules = unsafe {
         let modules_ptr = out_buf
             .as_ptr()
             .cast::<u32>()
             .offset(2)
             .cast::<_RTL_PROCESS_MODULE_INFORMATION>();
-        let modules = std::slice::from_raw_parts(modules_ptr, number_of_modules);
-        for module in modules {
-            let mod_str_filepath = std::ffi::CStr::from_ptr(module.FullPathName.as_ptr().cast())
-                .to_str()
-                .unwrap();
+        std::slice::from_raw_parts(modules_ptr, number_of_modules)
+    };
+
+    let mut kernel_module_paths = modules
+        .iter()
+        .map(|module| {
+            let mod_str_filepath =
+                unsafe { std::ffi::CStr::from_ptr(module.FullPathName.as_ptr().cast()) }
+                    .to_str()
+                    .unwrap();
             let verbatim_path_osstring: OsString = mod_str_filepath
                 .replacen("\\SystemRoot\\", "\\\\?\\C:\\Windows\\", 1)
                 .into();
-
-            let verbatim_path = verbatim_path_osstring
-                .encode_wide()
-                .chain(Some(0))
-                .collect::<Vec<_>>();
-
-            let ret = SymLoadModuleExW(
-                handle,
-                HANDLE(0),
-                PCWSTR(verbatim_path.as_ptr()),
-                PCWSTR(null_mut()),
+            (
+                verbatim_path_osstring,
                 module.ImageBase as u64,
-                0,
-                null_mut(),
-                SYM_LOAD_FLAGS(0),
-            );
-
-            if ret == 0 {
-                if GetLastError() != ERROR_SUCCESS {
-                    // Otherwise "already loaded" which is fine
-                    /*
-                    println!(
-                        "Error loading kernel module in_path:{} verbatim_path:{} GetLastError:{:?} base_of_image:{:?}",
-                        mod_str_filepath,
-                        verbatim_path_osstring.to_string_lossy(),
-                        get_last_error(""),
-                        module.ImageBase
-                    );
-                    */
-                }
-                continue;
-            }
-            SymRefreshModuleList(handle);
-        }
-    } else {
-        println!("Failed to load kernel modules");
-    }
+                module.ImageSize as u64,
+            )
+        })
+        .collect();
+    kernel_module_paths
 }
