@@ -8,7 +8,7 @@
 #![allow(clippy::field_reassign_with_default)]
 
 use object::Object;
-use windows::core::{GUID, PCSTR, PCWSTR, PSTR};
+use windows::core::{GUID, PCSTR, PSTR};
 use windows::Win32::Foundation::{
     CloseHandle, DuplicateHandle, GetLastError, DUPLICATE_SAME_ACCESS, ERROR_SUCCESS,
     ERROR_WMI_INSTANCE_NOT_FOUND, HANDLE, INVALID_HANDLE_VALUE, WIN32_ERROR,
@@ -18,8 +18,7 @@ use windows::Win32::Security::{
     TOKEN_PRIVILEGES,
 };
 use windows::Win32::System::Diagnostics::Debug::{
-    FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM, FORMAT_MESSAGE_IGNORE_INSERTS, IMAGEHLP_MODULE64,
-    SYMBOL_INFO_FLAGS, SYMOPT_DEBUG, SYM_LOAD_FLAGS,
+    FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM, FORMAT_MESSAGE_IGNORE_INSERTS, SYMBOL_INFO_FLAGS,
 };
 use windows::Win32::System::Diagnostics::Etw::{
     CloseTrace, ControlTraceA, OpenTraceA, ProcessTrace, StartTraceA, SystemTraceControlGuid,
@@ -36,15 +35,12 @@ use windows::Win32::System::Threading::{
     THREAD_PRIORITY_TIME_CRITICAL,
 };
 
-use pdb_addr2line::pdb::PDB;
+use pdb_addr2line::{pdb::PDB, ContextPdbData};
 
 use std::ffi::OsString;
 use std::io::{Read, Write};
 use std::mem::size_of;
-use std::os::windows::{
-    ffi::{OsStrExt, OsStringExt},
-    prelude::AsRawHandle,
-};
+use std::os::windows::{ffi::OsStringExt, prelude::AsRawHandle};
 use std::path::PathBuf;
 use std::ptr::{addr_of, addr_of_mut, null_mut};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -61,7 +57,7 @@ struct TraceContext {
     /// (image_path, image_base, image_size, pdb_path)
     /// These are paths of the form "\Device\HardDiskVolume"
     /// pdb_path is None after tracing if no pdb was found
-    image_paths: Vec<(OsString, u64, u64, Option<(OsString, PathBuf)>)>,
+    image_paths: Vec<(OsString, u64, u64)>,
 }
 impl TraceContext {
     /// The Context takes ownership of the handle.
@@ -383,7 +379,6 @@ unsafe fn trace_from_process(
                 filename_os_string,
                 event.ImageBase as u64,
                 event.ImageSize as u64,
-                None,
             ));
 
             return;
@@ -546,7 +541,7 @@ unsafe fn trace_from_process(
         context.image_paths.extend(
             kernel_module_paths
                 .into_iter()
-                .map(|(path, image_base, image_size)| (path, image_base, image_size, None)),
+                .map(|(path, image_base, image_size)| (path, image_base, image_size)),
         );
     }
 
@@ -592,7 +587,6 @@ pub fn trace_command(
 ///
 /// You can get them using [`CollectionResults::iter_callstacks`]
 pub struct CallStack<'a> {
-    ctx: &'a TraceContext,
     stack: &'a [u64; MAX_STACK_DEPTH],
     sample_count: u64,
 }
@@ -617,23 +611,22 @@ enum PdbContents {
     Missing,
 }
 */
-type ModuleData = (
-    u64,
-    u64,
-    OsString, /*, Option<PdbContents>*/
-    PDB<'static, std::io::Cursor<Vec<u8>>>,
-);
+type OwnedPdb = ContextPdbData<'static, 'static, std::io::Cursor<Vec<u8>>>;
+fn owned_pdb(pdb_file_bytes: Vec<u8>) -> Option<OwnedPdb> {
+    let pdb = PDB::open(std::io::Cursor::new(pdb_file_bytes)).ok()?;
+    pdb_addr2line::ContextPdbData::try_from_pdb(pdb).ok()
+}
+/// (image_base, image_size, image_name, addr2line pdb context)
+type ModuleData = (u64, u64, OsString, OwnedPdb);
 struct PdbDb {
     pdb_db: std::collections::BTreeMap<u64, ModuleData>,
 }
+type PdbDbP<'a, 'b> =
+    std::collections::BTreeMap<u64, (u64, u64, OsString, pdb_addr2line::Context<'a, 'b>)>;
 impl PdbDb {
-    fn build(images: &[(OsString, u64, u64, Option<(OsString, PathBuf)>)]) -> Self {
+    fn build(images: &[(OsString, u64, u64)]) -> Self {
         let mut pdb_db = std::collections::BTreeMap::new();
-        for (path, image_base, image_size, out_pdb_path) in images {
-            // pdb_db.insert(
-            //     *image_base,
-            //     (*image_base, *image_size, image_name.to_owned(), None),
-            // );
+        for (path, image_base, image_size) in images {
             let path_str = path.to_str().unwrap();
             // Convert the \Device\HardDiskVolume path to a verbatim path \\?\HardDiskVolume
             let verbatim_path_os: OsString = path_str
@@ -666,14 +659,14 @@ impl PdbDb {
                 };
                 let mut file_bytes = Vec::with_capacity(0);
                 file.read_to_end(&mut file_bytes).unwrap();
-                let pdb = match PDB::open(std::io::Cursor::new(file_bytes)) {
-                    Err(_) => continue,
-                    Ok(x) => x,
+                let pdb_ctx = match owned_pdb(file_bytes) {
+                    Some(x) => x,
+                    _ => continue,
                 };
 
                 pdb_db.insert(
                     *image_base,
-                    (*image_base, *image_size, image_name.to_owned(), pdb),
+                    (*image_base, *image_size, image_name.to_owned(), pdb_ctx),
                 );
             } else {
                 let pdb_filename = match pdb_path.file_name() {
@@ -701,53 +694,105 @@ impl PdbDb {
 
                 let relative_path: PathBuf =
                     [pdb_filename, guid_str, pdb_filename].iter().collect();
-                dbg!((&relative_path, &image_name));
+                //dbg!((&relative_path, &image_name));
 
                 let rt = tokio::runtime::Builder::new_current_thread()
                     .enable_all()
                     .build()
                     .unwrap();
                 if let Ok(file_contents) = rt.block_on(symbol_cache.get_pdb(&relative_path)) {
-                    //
-                    println!("yes");
-                    let pdb = match PDB::open(std::io::Cursor::new(file_contents.to_vec())) {
-                        Err(_) => continue,
-                        Ok(x) => x,
+                    let pdb_ctx = match owned_pdb(file_contents.to_vec()) {
+                        Some(x) => x,
+                        _ => continue,
                     };
                     pdb_db.insert(
                         *image_base,
-                        (*image_base, *image_size, image_name.to_owned(), pdb),
+                        (*image_base, *image_size, image_name.to_owned(), pdb_ctx),
                     );
                 }
             }
         }
         Self { pdb_db }
     }
-    fn get_module_mut(&mut self, addr: u64) -> Option<&mut ModuleData> {
+    fn get_module(&self, addr: u64) -> Option<&ModuleData> {
         self.pdb_db
-            .range_mut(..addr)
+            .range(..addr)
             .rev()
             .next()
             .map(|(_, module)| module)
-    }
-    fn get_pdb(&mut self, addr: u64) -> Option<&PDB<'static, std::io::Cursor<Vec<u8>>>> {
-        let module = self.pdb_db.range(..addr).rev().next()?;
-        return Some(&module.1 .3);
-        // ret.image_name = module.1 .2.to_str().map(|x| x.to_owned());
-        // let addr_in_module = addr - module.0;
-        // if module.1.3.is_none() {
-        //     module.1.3 =
-        // }
-
-        // let file = std::fs::File::open(&module.1 .2).unwrap();
-        // let pdb = PDB::open(file).unwrap();
-        // None
     }
 }
 impl<'a> CallStack<'a> {
     /// Iterate addresses in this callstack
     ///
     /// This also performs symbol resolution if possible, and tries to find the image (DLL/EXE) it comes from
+    fn iter_resolved_addresses2<F: for<'b> FnMut(u64, u64, &'b [&'b str], Option<&'b str>)>(
+        &'a self,
+        pdb_db: &'a PdbDbP,
+        v: &mut Vec<&'_ str>,
+        mut f: F,
+    ) {
+        fn reuse_vec<T, U>(mut v: Vec<T>) -> Vec<U> {
+            // See https://users.rust-lang.org/t/pattern-how-to-reuse-a-vec-str-across-loop-iterations/61657/3
+            assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<U>());
+            assert_eq!(std::mem::align_of::<T>(), std::mem::align_of::<U>());
+            v.clear();
+            v.into_iter().map(|_| unreachable!()).collect()
+        }
+        let displacement = 0u64;
+        let mut symbol_names_storage = reuse_vec(std::mem::replace(v, vec![]));
+        for &addr in self.stack {
+            if addr == 0 {
+                *v = symbol_names_storage;
+                return;
+            }
+            let mut symbol_names = symbol_names_storage;
+
+            let module = pdb_db.range(..addr).rev().next();
+            //let module = pdb_db.get_module(addr);
+            let module = match module {
+                None => {
+                    f(addr, 0, &[], None);
+                    symbol_names_storage = reuse_vec(symbol_names);
+                    continue;
+                }
+                Some(x) => x.1,
+            };
+            // let module = pdb_db.range(..addr).rev().next();
+            // let module = match module {
+            //     None => return ret,
+            //     Some(x) => x,
+            // };
+            let image_name = module.2.to_str();
+            let addr_in_module = addr - module.0;
+
+            // let file = std::fs::File::open(module.1 .3.clone()).unwrap();
+            // let pdb = PDB::open(file).unwrap();
+            // let context = match module.3.make_context() {
+            //     Ok(x) => x,
+            //     _ => {
+            //         f(addr, 0, &[], image_name);
+            //         symbol_names_storage = reuse_vec(symbol_names);
+            //         continue;
+            //     }
+            // };
+            let procedure_frames = match module.3.find_frames(addr_in_module as u32) {
+                Ok(Some(x)) => x,
+                _ => {
+                    f(addr, 0, &[], image_name);
+                    symbol_names_storage = reuse_vec(symbol_names);
+                    continue;
+                }
+            };
+            for frame in &procedure_frames.frames {
+                // TODO: tinyvec?
+                symbol_names.push(frame.function.as_deref().unwrap_or("Unknown"));
+            }
+            f(addr, displacement, &symbol_names, image_name);
+            symbol_names_storage = reuse_vec(symbol_names);
+        }
+        *v = symbol_names_storage;
+    }
     fn iter_resolved_addresses(
         &'a self,
         pdb_db: &'a mut PdbDb,
@@ -763,7 +808,7 @@ impl<'a> CallStack<'a> {
                     image_name: None,
                 };
 
-                let module = pdb_db.get_module_mut(addr);
+                let module = pdb_db.get_module(addr);
                 let module = match module {
                     None => return ret,
                     Some(x) => x,
@@ -778,12 +823,7 @@ impl<'a> CallStack<'a> {
 
                 // let file = std::fs::File::open(module.1 .3.clone()).unwrap();
                 // let pdb = PDB::open(file).unwrap();
-                let context_data =
-                    match pdb_addr2line::ContextPdbData::try_from_pdb_ref(&mut module.3) {
-                        Ok(x) => x,
-                        _ => return ret,
-                    };
-                let context = match context_data.make_context() {
+                let context = match module.3.make_context() {
                     Ok(x) => x,
                     _ => return ret,
                 };
@@ -806,7 +846,6 @@ impl CollectionResults {
     /// Iterate the distinct callstacks sampled in this execution
     pub fn iter_callstacks(&self) -> impl std::iter::Iterator<Item = CallStack<'_>> {
         self.0.stack_counts_hashmap.iter().map(|x| CallStack {
-            ctx: &self.0,
             stack: x.0,
             sample_count: *x.1,
         })
@@ -814,39 +853,53 @@ impl CollectionResults {
     /// Resolve call stack symbols and write a dtrace-like sampling report to `w`
     pub fn write_dtrace<W: Write>(&self, mut w: W) -> Result<()> {
         let mut pdb_db = PdbDb::build(&self.0.image_paths);
+        let db: PdbDbP = pdb_db
+            .pdb_db
+            .iter()
+            .map(|(x, (a, b, c, d))| (*x, (*a, *b, c.clone(), d.make_context())))
+            .filter_map(|(x, (a, b, c, d))| d.ok().map(|d| (x, (a, b, c, d))))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let mut v = vec![];
 
         'next_callstack: for callstack in self.iter_callstacks() {
-            for resolved_addr in callstack.iter_resolved_addresses(&mut pdb_db) {
-                let displacement = resolved_addr.displacement;
-                let address = resolved_addr.addr;
-                if !self.0.show_kernel_samples {
-                    // kernel addresses have the highest bit set on windows
-                    if address & (1 << 63) != 0 {
-                        continue 'next_callstack;
-                    }
-                }
-                for symbol_name in &resolved_addr.symbol_names {
-                    if let Some(image_name) = &resolved_addr.image_name {
-                        if displacement != 0 {
-                            writeln!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}")
-                                .unwrap();
-                        } else {
-                            writeln!(w, "\t\t{image_name}`{symbol_name}").unwrap();
-                        }
-                    } else {
-                        // Image name not found
-                        if displacement != 0 {
-                            writeln!(w, "\t\t{symbol_name}+0x{displacement:X}").unwrap();
-                        } else {
-                            writeln!(w, "\t\t{symbol_name}").unwrap();
+            //for resolved_addr in callstack.iter_resolved_addresses(&mut pdb_db) {
+            callstack.iter_resolved_addresses2(
+                &db,
+                &mut v,
+                |address, displacement, symbol_names, image_name| {
+                    //let displacement = displacement;
+                    //let address = addr;
+                    if !self.0.show_kernel_samples {
+                        // kernel addresses have the highest bit set on windows
+                        if address & (1 << 63) != 0 {
+                            //continue 'next_callstack;
+                            return;
                         }
                     }
-                }
-                if resolved_addr.symbol_names.is_empty() {
-                    // Symbol not found
-                    writeln!(w, "\t\t`0x{address:X}").unwrap();
-                }
-            }
+                    for symbol_name in symbol_names {
+                        if let Some(image_name) = image_name {
+                            if displacement != 0 {
+                                writeln!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}")
+                                    .unwrap();
+                            } else {
+                                writeln!(w, "\t\t{image_name}`{symbol_name}").unwrap();
+                            }
+                        } else {
+                            // Image name not found
+                            if displacement != 0 {
+                                writeln!(w, "\t\t{symbol_name}+0x{displacement:X}").unwrap();
+                            } else {
+                                writeln!(w, "\t\t{symbol_name}").unwrap();
+                            }
+                        }
+                    }
+                    if symbol_names.is_empty() {
+                        // Symbol not found
+                        writeln!(w, "\t\t`0x{address:X}").unwrap();
+                    }
+                },
+            );
+            //}
             let count = callstack.sample_count;
             write!(w, "\t\t{count}\n\n").unwrap();
         }
@@ -948,7 +1001,7 @@ fn list_kernel_modules() -> Vec<(OsString, u64, u64)> {
         std::slice::from_raw_parts(modules_ptr, number_of_modules)
     };
 
-    let mut kernel_module_paths = modules
+    let kernel_module_paths = modules
         .iter()
         .map(|module| {
             let mod_str_filepath =
