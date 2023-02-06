@@ -103,6 +103,8 @@ const MAX_STACK_DEPTH: usize = 200;
 pub enum Error {
     /// Blondie requires administrator privileges
     NotAnAdmin,
+    /// Error writing to the provided Writer
+    Write(std::io::Error),
     /// Error spawning a suspended process
     SpawnErr(std::io::Error),
     /// Error waiting for child
@@ -115,6 +117,11 @@ pub enum Error {
     UnknownError,
 }
 type Result<T> = std::result::Result<T, Error>;
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Error::Write(err)
+    }
+}
 
 fn get_last_error(extra: &'static str) -> Error {
     const BUF_LEN: usize = 1024;
@@ -135,7 +142,7 @@ fn get_last_error(extra: &'static str) -> Error {
     let code_str = unsafe {
         std::ffi::CStr::from_ptr(buf.as_ptr().cast())
             .to_str()
-            .unwrap()
+            .unwrap_or("Invalid utf8 in error")
     };
     Error::Other(code, code_str.to_string(), extra)
 }
@@ -278,7 +285,8 @@ unsafe fn trace_from_process(
     event_trace_props.data.Wnode.ClientContext = 3;
     event_trace_props.data.Wnode.Guid = SystemTraceControlGuid;
     event_trace_props.data.BufferSize = 1024;
-    let core_count = std::thread::available_parallelism().unwrap();
+    let core_count = std::thread::available_parallelism()
+        .unwrap_or(std::num::NonZeroUsize::new(1usize).unwrap());
     event_trace_props.data.MinimumBuffers = core_count.get() as u32 * 4;
     event_trace_props.data.MaximumBuffers = core_count.get() as u32 * 6;
     event_trace_props.data.LoggerNameOffset = size_of::<EVENT_TRACE_PROPERTIES>() as u32;
@@ -490,7 +498,7 @@ unsafe fn trace_from_process(
 
         let ret = CloseTrace(trace_processing_handle);
         if ret != ERROR_SUCCESS.0 {
-            println!("Error closing trace");
+            panic!("Error closing trace");
         }
         sender.send(()).unwrap();
     });
@@ -506,13 +514,13 @@ unsafe fn trace_from_process(
         // Therefore, we call the undocumented NtResumeProcess. We should probably manually call CreateProcess.
         let ntdll =
             windows::Win32::System::LibraryLoader::GetModuleHandleA(PCSTR("ntdll.dll\0".as_ptr()))
-                .unwrap();
+                .expect("Could not find ntdll.dll");
         #[allow(non_snake_case)]
         let NtResumeProcess = windows::Win32::System::LibraryLoader::GetProcAddress(
             ntdll,
             PCSTR("NtResumeProcess\0".as_ptr()),
         )
-        .unwrap();
+        .expect("Could not find NtResumeProcess in ntdll.dll");
         #[allow(non_snake_case)]
         let NtResumeProcess: extern "system" fn(isize) -> i32 =
             std::mem::transmute(NtResumeProcess);
@@ -626,8 +634,16 @@ type PdbDbP<'a, 'b> =
 impl PdbDb {
     fn build(images: &[(OsString, u64, u64)]) -> Self {
         let mut pdb_db = std::collections::BTreeMap::new();
+
+        // TODO: Warn if we can't use tokio?
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build();
         for (path, image_base, image_size) in images {
-            let path_str = path.to_str().unwrap();
+            let path_str = match path.to_str() {
+                Some(x) => x,
+                _ => continue,
+            };
             // Convert the \Device\HardDiskVolume path to a verbatim path \\?\HardDiskVolume
             let verbatim_path_os: OsString = path_str
                 .trim_end_matches('\0')
@@ -636,11 +652,11 @@ impl PdbDb {
 
             let path = PathBuf::from(verbatim_path_os);
 
-            let image_name = path.file_name().unwrap();
             let image_contents = match std::fs::read(&path) {
                 Ok(x) => x,
                 _ => continue,
             };
+            let image_name = path.file_name().unwrap();
             let pe_file = match object::File::parse(&image_contents[..]) {
                 Ok(x) => x,
                 _ => continue,
@@ -650,7 +666,10 @@ impl PdbDb {
                 Ok(Some(x)) => (x.path(), x.guid(), x.age()),
                 _ => continue,
             };
-            let pdb_path = std::str::from_utf8(pdb_path).unwrap();
+            let pdb_path = match std::str::from_utf8(pdb_path) {
+                Ok(x) => x,
+                _ => continue,
+            };
             let pdb_path = PathBuf::from(pdb_path);
             if pdb_path.exists() {
                 let mut file = match std::fs::File::open(pdb_path) {
@@ -658,7 +677,9 @@ impl PdbDb {
                     Ok(x) => x,
                 };
                 let mut file_bytes = Vec::with_capacity(0);
-                file.read_to_end(&mut file_bytes).unwrap();
+                if file.read_to_end(&mut file_bytes).is_err() {
+                    continue;
+                }
                 let pdb_ctx = match owned_pdb(file_bytes) {
                     Some(x) => x,
                     _ => continue,
@@ -694,44 +715,36 @@ impl PdbDb {
 
                 let relative_path: PathBuf =
                     [pdb_filename, guid_str, pdb_filename].iter().collect();
-                //dbg!((&relative_path, &image_name));
 
-                let rt = tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap();
-                if let Ok(file_contents) = rt.block_on(symbol_cache.get_pdb(&relative_path)) {
-                    let pdb_ctx = match owned_pdb(file_contents.to_vec()) {
-                        Some(x) => x,
-                        _ => continue,
-                    };
-                    pdb_db.insert(
-                        *image_base,
-                        (*image_base, *image_size, image_name.to_owned(), pdb_ctx),
-                    );
+                if let Ok(rt) = &rt {
+                    if let Ok(file_contents) = rt.block_on(symbol_cache.get_pdb(&relative_path)) {
+                        let pdb_ctx = match owned_pdb(file_contents.to_vec()) {
+                            Some(x) => x,
+                            _ => continue,
+                        };
+                        pdb_db.insert(
+                            *image_base,
+                            (*image_base, *image_size, image_name.to_owned(), pdb_ctx),
+                        );
+                    }
                 }
             }
         }
         Self { pdb_db }
-    }
-    fn get_module(&self, addr: u64) -> Option<&ModuleData> {
-        self.pdb_db
-            .range(..addr)
-            .rev()
-            .next()
-            .map(|(_, module)| module)
     }
 }
 impl<'a> CallStack<'a> {
     /// Iterate addresses in this callstack
     ///
     /// This also performs symbol resolution if possible, and tries to find the image (DLL/EXE) it comes from
-    fn iter_resolved_addresses2<F: for<'b> FnMut(u64, u64, &'b [&'b str], Option<&'b str>)>(
+    fn iter_resolved_addresses2<
+        F: for<'b> FnMut(u64, u64, &'b [&'b str], Option<&'b str>) -> Result<()>,
+    >(
         &'a self,
         pdb_db: &'a PdbDbP,
         v: &mut Vec<&'_ str>,
         mut f: F,
-    ) {
+    ) -> Result<()> {
         fn reuse_vec<T, U>(mut v: Vec<T>) -> Vec<U> {
             // See https://users.rust-lang.org/t/pattern-how-to-reuse-a-vec-str-across-loop-iterations/61657/3
             assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<U>());
@@ -744,102 +757,38 @@ impl<'a> CallStack<'a> {
         for &addr in self.stack {
             if addr == 0 {
                 *v = symbol_names_storage;
-                return;
+                return Ok(());
             }
             let mut symbol_names = symbol_names_storage;
 
             let module = pdb_db.range(..addr).rev().next();
-            //let module = pdb_db.get_module(addr);
             let module = match module {
                 None => {
-                    f(addr, 0, &[], None);
+                    f(addr, 0, &[], None)?;
                     symbol_names_storage = reuse_vec(symbol_names);
                     continue;
                 }
                 Some(x) => x.1,
             };
-            // let module = pdb_db.range(..addr).rev().next();
-            // let module = match module {
-            //     None => return ret,
-            //     Some(x) => x,
-            // };
             let image_name = module.2.to_str();
             let addr_in_module = addr - module.0;
 
-            // let file = std::fs::File::open(module.1 .3.clone()).unwrap();
-            // let pdb = PDB::open(file).unwrap();
-            // let context = match module.3.make_context() {
-            //     Ok(x) => x,
-            //     _ => {
-            //         f(addr, 0, &[], image_name);
-            //         symbol_names_storage = reuse_vec(symbol_names);
-            //         continue;
-            //     }
-            // };
             let procedure_frames = match module.3.find_frames(addr_in_module as u32) {
                 Ok(Some(x)) => x,
                 _ => {
-                    f(addr, 0, &[], image_name);
+                    f(addr, 0, &[], image_name)?;
                     symbol_names_storage = reuse_vec(symbol_names);
                     continue;
                 }
             };
             for frame in &procedure_frames.frames {
-                // TODO: tinyvec?
                 symbol_names.push(frame.function.as_deref().unwrap_or("Unknown"));
             }
-            f(addr, displacement, &symbol_names, image_name);
+            f(addr, displacement, &symbol_names, image_name)?;
             symbol_names_storage = reuse_vec(symbol_names);
         }
         *v = symbol_names_storage;
-    }
-    fn iter_resolved_addresses(
-        &'a self,
-        pdb_db: &'a mut PdbDb,
-    ) -> impl std::iter::Iterator<Item = Address> + 'a {
-        self.stack
-            .iter()
-            .take_while(|&&addr| addr != 0)
-            .map(move |&addr| {
-                let mut ret = Address {
-                    addr,
-                    displacement: 0u64,
-                    symbol_names: vec![],
-                    image_name: None,
-                };
-
-                let module = pdb_db.get_module(addr);
-                let module = match module {
-                    None => return ret,
-                    Some(x) => x,
-                };
-                // let module = pdb_db.range(..addr).rev().next();
-                // let module = match module {
-                //     None => return ret,
-                //     Some(x) => x,
-                // };
-                ret.image_name = module.2.to_str().map(|x| x.to_owned());
-                let addr_in_module = addr - module.0;
-
-                // let file = std::fs::File::open(module.1 .3.clone()).unwrap();
-                // let pdb = PDB::open(file).unwrap();
-                let context = match module.3.make_context() {
-                    Ok(x) => x,
-                    _ => return ret,
-                };
-                let procedure_frames = match context.find_frames(addr_in_module as u32) {
-                    Ok(Some(x)) => x,
-                    _ => return ret,
-                };
-                for frame in procedure_frames.frames {
-                    // TODO: tinyvec?
-                    ret.symbol_names.push(format!(
-                        "{}",
-                        frame.function.as_deref().unwrap_or("Unknown"),
-                    ));
-                }
-                ret
-            })
+        Ok(())
     }
 }
 impl CollectionResults {
@@ -873,35 +822,35 @@ impl CollectionResults {
                         // kernel addresses have the highest bit set on windows
                         if address & (1 << 63) != 0 {
                             //continue 'next_callstack;
-                            return;
+                            return Ok(());
                         }
                     }
                     for symbol_name in symbol_names {
                         if let Some(image_name) = image_name {
                             if displacement != 0 {
-                                writeln!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}")
-                                    .unwrap();
+                                writeln!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}")?;
                             } else {
-                                writeln!(w, "\t\t{image_name}`{symbol_name}").unwrap();
+                                writeln!(w, "\t\t{image_name}`{symbol_name}")?;
                             }
                         } else {
                             // Image name not found
                             if displacement != 0 {
-                                writeln!(w, "\t\t{symbol_name}+0x{displacement:X}").unwrap();
+                                writeln!(w, "\t\t{symbol_name}+0x{displacement:X}")?;
                             } else {
-                                writeln!(w, "\t\t{symbol_name}").unwrap();
+                                writeln!(w, "\t\t{symbol_name}")?;
                             }
                         }
                     }
                     if symbol_names.is_empty() {
                         // Symbol not found
-                        writeln!(w, "\t\t`0x{address:X}").unwrap();
+                        writeln!(w, "\t\t`0x{address:X}")?;
                     }
+                    Ok(())
                 },
-            );
+            )?;
             //}
             let count = callstack.sample_count;
-            write!(w, "\t\t{count}\n\n").unwrap();
+            write!(w, "\t\t{count}\n\n")?;
         }
         Ok(())
     }
@@ -973,7 +922,7 @@ fn list_kernel_modules() -> Vec<(OsString, u64, u64)> {
         )
     };
     if retcode < 0 {
-        println!("Failed to load kernel modules");
+        //println!("Failed to load kernel modules");
         return vec![];
     }
     let number_of_modules = unsafe { out_buf.as_ptr().cast::<u32>().read_unaligned() as usize };
@@ -1003,19 +952,20 @@ fn list_kernel_modules() -> Vec<(OsString, u64, u64)> {
 
     let kernel_module_paths = modules
         .iter()
-        .map(|module| {
-            let mod_str_filepath =
-                unsafe { std::ffi::CStr::from_ptr(module.FullPathName.as_ptr().cast()) }
-                    .to_str()
-                    .unwrap();
-            let verbatim_path_osstring: OsString = mod_str_filepath
-                .replacen("\\SystemRoot\\", "\\\\?\\C:\\Windows\\", 1)
-                .into();
-            (
-                verbatim_path_osstring,
-                module.ImageBase as u64,
-                module.ImageSize as u64,
-            )
+        .filter_map(|module| {
+            unsafe { std::ffi::CStr::from_ptr(module.FullPathName.as_ptr().cast()) }
+                .to_str()
+                .ok()
+                .map(|mod_str_filepath| {
+                    let verbatim_path_osstring: OsString = mod_str_filepath
+                        .replacen("\\SystemRoot\\", "\\\\?\\C:\\Windows\\", 1)
+                        .into();
+                    (
+                        verbatim_path_osstring,
+                        module.ImageBase as u64,
+                        module.ImageSize as u64,
+                    )
+                })
         })
         .collect();
     kernel_module_paths
