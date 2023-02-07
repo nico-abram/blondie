@@ -38,12 +38,12 @@ rustc-hash = "1.1.0"
 inferno = { version = "0.11", optional = true }
 clap = { version = "4.0.26", optional = true, features = ["derive"] }
 # For symbol resolution
-pdb-addr2line = "0.7.1"
-symsrv = "0.1.2"
+pdb-addr2line = "0.10"
+symsrv = "0.2"
 # Needed for symsrv
 tokio = { version = "1.17.0", features = ["fs", "rt"] }
 # To extract pdb paths from image files
-object = "0.28.4"
+object = "0.30"
 
 [profile.release]
 debug = true

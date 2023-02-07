@@ -696,7 +696,7 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
             let relative_path: PathBuf = [pdb_filename, guid_str, pdb_filename].iter().collect();
 
             if let Ok(rt) = &rt {
-                if let Ok(file_contents) = rt.block_on(symbol_cache.get_pdb(&relative_path)) {
+                if let Ok(file_contents) = rt.block_on(symbol_cache.get_file(&relative_path)) {
                     let pdb_ctx = match owned_pdb(file_contents.to_vec()) {
                         Some(x) => x,
                         _ => continue,
