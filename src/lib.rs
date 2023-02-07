@@ -14,19 +14,20 @@ use windows::Win32::Foundation::{
     ERROR_WMI_INSTANCE_NOT_FOUND, HANDLE, INVALID_HANDLE_VALUE, WIN32_ERROR,
 };
 use windows::Win32::Security::{
-    AdjustTokenPrivileges, LookupPrivilegeValueA, SE_PRIVILEGE_ENABLED, TOKEN_ADJUST_PRIVILEGES,
+    AdjustTokenPrivileges, LookupPrivilegeValueW, SE_PRIVILEGE_ENABLED, TOKEN_ADJUST_PRIVILEGES,
     TOKEN_PRIVILEGES,
 };
 use windows::Win32::System::Diagnostics::Debug::{
-    FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM, FORMAT_MESSAGE_IGNORE_INSERTS, SYMBOL_INFO_FLAGS,
+    FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM, FORMAT_MESSAGE_IGNORE_INSERTS,
 };
 use windows::Win32::System::Diagnostics::Etw::{
     CloseTrace, ControlTraceA, OpenTraceA, ProcessTrace, StartTraceA, SystemTraceControlGuid,
     TraceSampledProfileIntervalInfo, TraceSetInformation, TraceStackTracingInfo, CLASSIC_EVENT_ID,
-    EVENT_RECORD, EVENT_TRACE_CONTROL_STOP, EVENT_TRACE_FLAG_IMAGE_LOAD, EVENT_TRACE_FLAG_PROFILE,
-    EVENT_TRACE_LOGFILEA, EVENT_TRACE_PROPERTIES, EVENT_TRACE_REAL_TIME_MODE, KERNEL_LOGGER_NAMEA,
-    PROCESS_TRACE_MODE_EVENT_RECORD, PROCESS_TRACE_MODE_RAW_TIMESTAMP,
-    PROCESS_TRACE_MODE_REAL_TIME, TRACE_PROFILE_INTERVAL, WNODE_FLAG_TRACED_GUID,
+    CONTROLTRACE_HANDLE, EVENT_RECORD, EVENT_TRACE_CONTROL_STOP, EVENT_TRACE_FLAG_IMAGE_LOAD,
+    EVENT_TRACE_FLAG_PROFILE, EVENT_TRACE_LOGFILEA, EVENT_TRACE_PROPERTIES,
+    EVENT_TRACE_REAL_TIME_MODE, KERNEL_LOGGER_NAMEA, PROCESS_TRACE_MODE_EVENT_RECORD,
+    PROCESS_TRACE_MODE_RAW_TIMESTAMP, PROCESS_TRACE_MODE_REAL_TIME, TRACE_PROFILE_INTERVAL,
+    WNODE_FLAG_TRACED_GUID,
 };
 use windows::Win32::System::SystemInformation::{GetVersionExA, OSVERSIONINFOA};
 use windows::Win32::System::SystemServices::SE_SYSTEM_PROFILE_NAME;
@@ -42,7 +43,7 @@ use std::io::{Read, Write};
 use std::mem::size_of;
 use std::os::windows::{ffi::OsStringExt, prelude::AsRawHandle};
 use std::path::PathBuf;
-use std::ptr::{addr_of, addr_of_mut, null_mut};
+use std::ptr::{addr_of, addr_of_mut};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 /// map[array_of_stacktrace_addrs] = sample_count
@@ -128,12 +129,12 @@ fn get_last_error(extra: &'static str) -> Error {
     let chars_written = unsafe {
         FormatMessageA(
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            null_mut(),
+            None,
             code.0,
             0,
             PSTR(buf.as_mut_ptr()),
             BUF_LEN as u32,
-            null_mut(),
+            None,
         )
     };
     assert!(chars_written != 0);
@@ -167,20 +168,7 @@ fn acquire_priviledges() -> Result<()> {
     privs.PrivilegeCount = 1;
     privs.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
     if unsafe {
-        LookupPrivilegeValueA(
-            PCSTR(null_mut()),
-            PCSTR(
-                SE_SYSTEM_PROFILE_NAME
-                    .as_bytes()
-                    .iter()
-                    .cloned()
-                    .chain(Some(0))
-                    .collect::<Vec<u8>>()
-                    .as_ptr(),
-            ),
-            &mut privs.Privileges[0].Luid,
-        )
-        .0 == 0
+        LookupPrivilegeValueW(None, SE_SYSTEM_PROFILE_NAME, &mut privs.Privileges[0].Luid).0 == 0
     } {
         return Err(get_last_error("acquire_privileges LookupPrivilegeValueA"));
     }
@@ -188,9 +176,7 @@ fn acquire_priviledges() -> Result<()> {
     if unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &mut pt).0 == 0 } {
         return Err(get_last_error("OpenProcessToken"));
     }
-    let adjust = unsafe {
-        AdjustTokenPrivileges(pt, false, addr_of!(privs).cast(), 0, null_mut(), null_mut())
-    };
+    let adjust = unsafe { AdjustTokenPrivileges(pt, false, Some(addr_of!(privs)), 0, None, None) };
     if adjust.0 == 0 {
         let err = Err(get_last_error("AdjustTokenPrivileges"));
         unsafe {
@@ -238,13 +224,13 @@ unsafe fn trace_from_process(
         // TODO: Parameter?
         interval.Interval = (1000000000 / 8000) / 100;
         let ret = TraceSetInformation(
-            0,
+            None,
             // The value is supported on Windows 8, Windows Server 2012, and later.
             TraceSampledProfileIntervalInfo,
             addr_of!(interval).cast(),
             size_of::<TRACE_PROFILE_INTERVAL>() as u32,
         );
-        if ret != ERROR_SUCCESS.0 {
+        if ret != ERROR_SUCCESS {
             return Err(get_last_error("TraceSetInformation interval"));
         }
     }
@@ -265,16 +251,25 @@ unsafe fn trace_from_process(
     //  Events are delivered when the buffers are flushed (https://docs.microsoft.com/en-us/windows/win32/etw/logging-mode-constants)
     // We also use Image_Load events to know which dlls to load debug information from for symbol resolution
     // Which is enabled by the EVENT_TRACE_FLAG_IMAGE_LOAD flag
-    const PROPS_SIZE: usize = size_of::<EVENT_TRACE_PROPERTIES>() + KERNEL_LOGGER_NAMEA.len() + 1;
+    const KERNEL_LOGGER_NAMEA_LEN: usize = unsafe {
+        let mut ptr = KERNEL_LOGGER_NAMEA.0;
+        let mut len = 0;
+        while *ptr != 0 {
+            len += 1;
+            ptr = ptr.add(1);
+        }
+        len
+    };
+    const PROPS_SIZE: usize = size_of::<EVENT_TRACE_PROPERTIES>() + KERNEL_LOGGER_NAMEA_LEN + 1;
     #[derive(Clone)]
     #[repr(C)]
     struct EVENT_TRACE_PROPERTIES_WITH_STRING {
         data: EVENT_TRACE_PROPERTIES,
-        s: [u8; KERNEL_LOGGER_NAMEA.len() + 1],
+        s: [u8; KERNEL_LOGGER_NAMEA_LEN + 1],
     }
     let mut event_trace_props = EVENT_TRACE_PROPERTIES_WITH_STRING {
         data: EVENT_TRACE_PROPERTIES::default(),
-        s: [0u8; KERNEL_LOGGER_NAMEA.len() + 1],
+        s: [0u8; KERNEL_LOGGER_NAMEA_LEN + 1],
     };
     event_trace_props.data.EnableFlags = EVENT_TRACE_FLAG_PROFILE | EVENT_TRACE_FLAG_IMAGE_LOAD;
     event_trace_props.data.LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
@@ -298,27 +293,27 @@ unsafe fn trace_from_process(
     {
         let mut event_trace_props_copy = event_trace_props.clone();
         let control_stop_retcode = ControlTraceA(
-            0,
+            None,
             kernel_logger_name_with_nul_pcstr,
             addr_of_mut!(event_trace_props_copy) as *mut _,
             EVENT_TRACE_CONTROL_STOP,
         );
-        if control_stop_retcode != ERROR_SUCCESS.0
-            && control_stop_retcode != ERROR_WMI_INSTANCE_NOT_FOUND.0
+        if control_stop_retcode != ERROR_SUCCESS
+            && control_stop_retcode != ERROR_WMI_INSTANCE_NOT_FOUND
         {
             return Err(get_last_error("ControlTraceA STOP"));
         }
     }
 
     // Start kernel trace session
-    let mut trace_session_handle = 0;
+    let mut trace_session_handle: CONTROLTRACE_HANDLE = Default::default();
     {
         let start_retcode = StartTraceA(
-            &mut trace_session_handle,
+            addr_of_mut!(trace_session_handle),
             kernel_logger_name_with_nul_pcstr,
             addr_of_mut!(event_trace_props) as *mut _,
         );
-        if start_retcode != ERROR_SUCCESS.0 {
+        if start_retcode != ERROR_SUCCESS {
             return Err(get_last_error("StartTraceA"));
         }
     }
@@ -341,7 +336,7 @@ unsafe fn trace_from_process(
             addr_of!(stack_event_id).cast(),
             size_of::<CLASSIC_EVENT_ID>() as u32,
         );
-        if enable_stacks_retcode != ERROR_SUCCESS.0 {
+        if enable_stacks_retcode != ERROR_SUCCESS {
             return Err(get_last_error("TraceSetInformation stackwalk"));
         }
     }
@@ -484,7 +479,7 @@ unsafe fn trace_from_process(
     log.Anonymous2.EventRecordCallback = Some(event_record_callback);
 
     let trace_processing_handle = OpenTraceA(&mut log);
-    if trace_processing_handle == INVALID_HANDLE_VALUE.0 as u64 {
+    if trace_processing_handle.0 == INVALID_HANDLE_VALUE.0 as u64 {
         return Err(get_last_error("OpenTraceA processing"));
     }
 
@@ -492,10 +487,10 @@ unsafe fn trace_from_process(
     std::thread::spawn(move || {
         // This blocks
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-        ProcessTrace(&[trace_processing_handle], null_mut(), null_mut());
+        ProcessTrace(&[trace_processing_handle], None, None);
 
         let ret = CloseTrace(trace_processing_handle);
-        if ret != ERROR_SUCCESS.0 {
+        if ret != ERROR_SUCCESS {
             panic!("Error closing trace");
         }
         sender.send(()).unwrap();
@@ -529,12 +524,12 @@ unsafe fn trace_from_process(
     target_process.wait().map_err(Error::WaitOnChildErr)?;
     // This unblocks ProcessTrace
     let ret = ControlTraceA(
-        0,
+        <CONTROLTRACE_HANDLE as Default>::default(),
         PCSTR(kernel_logger_name_with_nul.as_ptr()),
         addr_of_mut!(event_trace_props) as *mut _,
         EVENT_TRACE_CONTROL_STOP,
     );
-    if ret != ERROR_SUCCESS.0 {
+    if ret != ERROR_SUCCESS {
         return Err(get_last_error("ControlTraceA STOP ProcessTrace"));
     }
     // Block until processing thread is done
@@ -611,13 +606,6 @@ pub struct Address {
     /// Imager (Exe or Dll) name
     pub image_name: Option<String>,
 }
-/*
-enum PdbContents {
-    FileContents(symsrv::FileContents),
-    File(std::fs::File),
-    Missing,
-}
-*/
 type OwnedPdb = ContextPdbData<'static, 'static, std::io::Cursor<Vec<u8>>>;
 type PdbDb<'a, 'b> =
     std::collections::BTreeMap<u64, (u64, u64, OsString, pdb_addr2line::Context<'a, 'b>)>;
@@ -631,7 +619,6 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
         pdb_addr2line::ContextPdbData::try_from_pdb(pdb).ok()
     }
 
-    // TODO: Warn if we can't use tokio?
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build();
@@ -854,28 +841,6 @@ struct ImageLoadEvent {
     Reserved2: u32,
     Reserved3: u32,
     Reserved4: u32,
-}
-
-const MAX_SYM_LEN: usize = 8 * 1024;
-#[allow(non_snake_case)]
-#[derive(Clone)]
-#[repr(C)]
-struct SYMBOL_INFO_WITH_STRING {
-    SizeOfStruct: u32,
-    TypeIndex: u32,
-    Reserved: [u64; 2],
-    Index: u32,
-    Size: u32,
-    ModBase: u64,
-    Flags: SYMBOL_INFO_FLAGS,
-    Value: u64,
-    Address: u64,
-    Register: u32,
-    Scope: u32,
-    Tag: u32,
-    NameLen: u32,
-    MaxNameLen: u32,
-    Name: [u8; MAX_SYM_LEN],
 }
 
 /// Returns a sequence of (image_file_path, image_base)
