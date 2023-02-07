@@ -14,7 +14,7 @@ struct Blondie {
     #[clap(short, long)]
     kernel_stacks: bool,
     /// Output filename
-    #[clap(short, long, parse(from_os_str))]
+    #[clap(short, long, value_parser)]
     out: Option<std::path::PathBuf>,
     /// Don't redirect stdout/stderr from the target process to blondie
     #[clap(short, long)]
@@ -29,10 +29,10 @@ enum Subcommands {
     #[clap(trailing_var_arg = true)]
     Flamegraph {
         /// Output filename for trace text callstacks. Defaults to nowhere.
-        #[clap(short, long, parse(from_os_str))]
+        #[clap(short, long, value_parser)]
         trace_file: Option<std::path::PathBuf>,
         /// Output filename for inferno collapsed stacks. Defaults to nowhere.
-        #[clap(short, long, parse(from_os_str))]
+        #[clap(short, long, value_parser)]
         collapsed_file: Option<std::path::PathBuf>,
         /// The command to run
         command: OsString,
