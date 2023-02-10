@@ -619,6 +619,9 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
         pdb_addr2line::ContextPdbData::try_from_pdb(pdb).ok()
     }
 
+    // Only download symbols from symbol servers if the env var is set
+    let use_symsrv = std::env::var("_NT_SYMBOL_PATH").is_ok();
+
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build();
@@ -669,7 +672,7 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
             };
 
             pdb_db.push((*image_base, *image_size, image_name.to_owned(), pdb_ctx));
-        } else {
+        } else if use_symsrv {
             let pdb_filename = match pdb_path.file_name() {
                 Some(x) => x,
                 _ => continue,
