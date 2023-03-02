@@ -41,7 +41,7 @@ clap = { version = "4.0.26", optional = true, features = ["derive"] }
 pdb-addr2line = "0.10"
 symsrv = "0.2"
 # Needed for symsrv
-tokio = { version = "1.17.0", features = ["fs", "rt"] }
+tokio = { version = "1.26.0", features = ["fs", "rt"] }
 # To extract pdb paths from image files
 object = "0.30"
 
