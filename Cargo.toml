@@ -36,7 +36,7 @@ windows = { version = "0.44.0", features = [
 rustc-hash = "1.1.0"
 # Only for the binary crate
 inferno = { version = "0.11", optional = true }
-clap = { version = "4.0.26", optional = true, features = ["derive"] }
+clap = { version = "4.2.0", optional = true, features = ["derive"] }
 # For symbol resolution
 pdb-addr2line = "0.10"
 symsrv = "0.2"
