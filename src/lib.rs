@@ -656,7 +656,10 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
             Ok(x) => x,
             _ => continue,
         };
-        let pdb_path = PathBuf::from(pdb_path);
+        let mut pdb_path = PathBuf::from(pdb_path);
+        if pdb_path.is_relative() {
+            pdb_path = path.parent().unwrap().join(pdb_path);
+        }
         if pdb_path.exists() {
             let mut file = match std::fs::File::open(pdb_path) {
                 Err(_) => continue,
