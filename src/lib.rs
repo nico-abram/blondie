@@ -32,8 +32,8 @@ use windows::Win32::System::Diagnostics::Etw::{
 use windows::Win32::System::SystemInformation::{GetVersionExA, OSVERSIONINFOA};
 use windows::Win32::System::SystemServices::SE_SYSTEM_PROFILE_NAME;
 use windows::Win32::System::Threading::{
-    GetCurrentProcess, GetCurrentThread, OpenProcessToken, SetThreadPriority, CREATE_SUSPENDED,
-    THREAD_PRIORITY_TIME_CRITICAL,
+    GetCurrentProcess, GetCurrentThread, OpenProcess, OpenProcessToken, SetThreadPriority, WaitForSingleObject, CREATE_SUSPENDED,
+    THREAD_PRIORITY_TIME_CRITICAL, PROCESS_ALL_ACCESS
 };
 
 use pdb_addr2line::{pdb::PDB, ContextPdbData};
@@ -106,8 +106,10 @@ pub enum Error {
     Write(std::io::Error),
     /// Error spawning a suspended process
     SpawnErr(std::io::Error),
-    /// Error waiting for child
-    WaitOnChildErr(std::io::Error),
+    /// Error waiting for child, abandoned
+    WaitOnChildErrAbandoned,
+    /// Error waiting for child, timed out
+    WaitOnChildErrTimeout,
     /// A call to a windows API function returned an error and we didn't know how to handle it
     Other(WIN32_ERROR, String, &'static str),
     /// We require Windows 7 or greater
@@ -163,6 +165,25 @@ unsafe fn clone_handle(h: HANDLE) -> Result<HANDLE> {
     }
     Ok(target_h)
 }
+
+/// A wrapper around `OpenProcess` that returns a handle with all access rights
+unsafe fn handle_from_process_id(process_id: u32) -> Result<HANDLE> {
+    match OpenProcess(PROCESS_ALL_ACCESS, false, process_id) {
+        Ok(handle) => Ok(handle),
+        Err(_) => Err(get_last_error("handle_from_process_id")),
+    }
+}
+
+unsafe fn wait_for_process_by_handle(handle: HANDLE) -> Result<()> {
+    let ret = WaitForSingleObject(handle, 0xFFFFFFFF);
+    match ret.0 {
+        0 => Ok(()),
+        0x00000080 => Err(Error::WaitOnChildErrAbandoned),
+        0x00000102 => Err(Error::WaitOnChildErrTimeout),
+        _ => Err(get_last_error("wait_for_process_by_handle")),
+    }
+}
+
 fn acquire_priviledges() -> Result<()> {
     let mut privs = TOKEN_PRIVILEGES::default();
     privs.PrivilegeCount = 1;
@@ -195,8 +216,8 @@ fn acquire_priviledges() -> Result<()> {
     Ok(())
 }
 /// SAFETY: is_suspended must only be true if `target_process` is suspended
-unsafe fn trace_from_process(
-    target_process: &mut std::process::Child,
+unsafe fn trace_from_process_id(
+    target_process_id: u32,
     is_suspended: bool,
     kernel_stacks: bool,
 ) -> Result<TraceContext> {
@@ -341,10 +362,8 @@ unsafe fn trace_from_process(
         }
     }
 
-    let target_pid = target_process.id();
-    // std Child closes the handle when it drops so we clone it
-    let target_proc_handle = clone_handle(HANDLE(target_process.as_raw_handle() as isize))?;
-    let mut context = TraceContext::new(target_proc_handle, target_pid, kernel_stacks)?;
+    let target_proc_handle = handle_from_process_id(target_process_id)?;
+    let mut context = TraceContext::new(target_proc_handle, target_process_id, kernel_stacks)?;
     //TODO: Do we need to Box the context?
 
     let mut log = EVENT_TRACE_LOGFILEA::default();
@@ -520,8 +539,11 @@ unsafe fn trace_from_process(
             std::mem::transmute(NtResumeProcess);
         NtResumeProcess(context.target_process_handle.0);
     }
+
+    println!("DEBUG: Waiting on process to end");
     // Wait for it to end
-    target_process.wait().map_err(Error::WaitOnChildErr)?;
+    wait_for_process_by_handle(target_proc_handle)?;
+    println!("DEBUG: Process ended");
     // This unblocks ProcessTrace
     let ret = ControlTraceA(
         <CONTROLTRACE_HANDLE as Default>::default(),
@@ -547,11 +569,23 @@ unsafe fn trace_from_process(
         );
     }
 
+    println!("DEBUG: Collection complete!");
     Ok(context)
 }
 
 /// The sampled results from a process execution
 pub struct CollectionResults(TraceContext);
+/// Trace an existing child process based only on its process ID (pid).
+/// It is recommended that you use `trace_command` instead, since it suspends the process on creation
+/// and only resumes it after the trace has started, ensuring that all samples are captured.
+/// If you are going to use this and you have control of the process, it is recommended to suspend it before
+/// attaching with this function.
+pub fn trace_pid(
+    process_id: u32,
+    kernel_stacks: bool,
+) {
+
+}
 /// Trace an existing child process.
 /// It is recommended that you use `trace_command` instead, since it suspends the process on creation
 /// and only resumes it after the trace has started, ensuring that all samples are captured.
@@ -559,7 +593,7 @@ pub fn trace_child(
     mut process: std::process::Child,
     kernel_stacks: bool,
 ) -> Result<CollectionResults> {
-    let res = unsafe { trace_from_process(&mut process, false, kernel_stacks) };
+    let res = unsafe { trace_from_process_id(process.id(), false, kernel_stacks) };
     res.map(CollectionResults)
 }
 /// Execute `command` and trace it, periodically collecting call stacks.
@@ -578,7 +612,7 @@ pub fn trace_command(
         .creation_flags(CREATE_SUSPENDED.0)
         .spawn()
         .map_err(Error::SpawnErr)?;
-    let res = unsafe { trace_from_process(&mut proc, true, kernel_stacks) };
+    let res = unsafe { trace_from_process_id(proc.id(), true, kernel_stacks) };
     if res.is_err() {
         // Kill the suspended process if we had some kind of error
         let _ = proc.kill();

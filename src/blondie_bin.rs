@@ -78,6 +78,9 @@ fn main() -> Result<(), blondie::Error> {
                 std::fs::write(trace_file, &trace_output).unwrap();
             }
 
+            println!("Wrote dtrace output to {:?}",trace_file);
+            
+
             let mut collapsed_output = Vec::new();
             let collapse_options = inferno::collapse::dtrace::Options::default();
             inferno::collapse::dtrace::Folder::from(collapse_options)
