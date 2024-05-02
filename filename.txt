@@ -1,0 +1,1340 @@
+		`0x7FF843E4D224
+		`0x7FF843E2CC72
+		`0x7FF843DF38C0
+		`0x7FF843DF4739
+		`0x7FF843EA25A0
+		`0x7FF843E8264C
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF841768170
+		`0x7FF84174C27B
+		`0x7FF84174C13E
+		`0x7FF84174D897
+		`0x7FF84174D06A
+		`0x7FF84174CF3F
+		`0x7FF84174CEF0
+		`0x7FF84174CE55
+		`0x7FF84174CDB6
+		`0x7FF84174C5ED
+		`0x7FF84174C32F
+		`0x7FF84174C2E7
+		`0x7FF84175571F
+		`0x7FF841516698
+		`0x7FF8415167EA
+		`0x7FF84151803B
+		`0x7FF84151778B
+		`0x7FF841511140
+		`0x7FF84175E473
+		`0x7FF841525142
+		`0x7FF8415252C4
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF841DF9ED8
+		`0x7FF841E003B2
+		`0x7FF841DFE69F
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DCD3B8
+		`0x7FF843DCAB3D
+		`0x7FF843DC8C6C
+		`0x7FF843DE33D7
+		`0x7FF843DE27DA
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E858FF
+		`0x7FF843E24D40
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DC8C70
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843C5B045
+		`0x7FF843C5AB01
+		`0x7FF843C5ABD6
+		`0x7FF843C27BAC
+		`0x7FF843C278A7
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE2714
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E4D784
+		`0x7FF843E0F37B
+		`0x7FF843E0F207
+		`0x7FF843E0F026
+		`0x7FF843E0F6E6
+		`0x7FF843E0EC70
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		3
+
+		`0x7FF841716C84
+		`0x7FF841C7257E
+		`0x7FF842D89016
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		3
+
+		`0x7FF843E0DCDB
+		`0x7FF843E0DA8D
+		`0x7FF84230E3BB
+		blondie.exe`std::sys::pal::windows::os::exit()
+		blondie.exe`std::process::exit()
+		blondie.exe`clap::util::safe_exit(int)
+		blondie.exe`clap::error::Error<clap::error::format::RichFormatter>::exit<clap::error::format::RichFormatter>()
+		blondie.exe`clap::builder::command::impl$0::get_matches_from::closure$0<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, clap::error::Error<clap::error::format::RichFormatter>)
+		blondie.exe`enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >::unwrap_or_else<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter>,clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString> >(enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >, clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, core::panic::location::Location*)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DE26C6
+		`0x7FF843DC7BC4
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843E1B2BD
+		`0x7FF843DCFB31
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E50874
+		`0x7FF843DF2F86
+		`0x7FF843DF30E5
+		`0x7FF843DF2EA0
+		`0x7FF841EB105A
+		`0x7FF841ECFB5E
+		`0x7FF841EC590E
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE2323
+		`0x7FF843DE3432
+		`0x7FF843DE27DA
+		`0x7FF843E0EC38
+		`0x7FF843E0EB58
+		`0x7FF843E83B07
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DC7ADD
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843E1B2BD
+		`0x7FF843DCFB31
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D6C4
+		`0x7FF843DC5157
+		`0x7FF843DC43EA
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4F314
+		`0x7FF8418D4440
+		`0x7FF843002DBA
+		`0x7FF843000630
+		`0x7FF843000495
+		`0x7FF843003A5C
+		`0x7FF8430034B8
+		`0x7FF842FA2289
+		`0x7FF84306A260
+		`0x7FF84306442F
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DDE06D
+		`0x7FF843DDB44D
+		`0x7FF843DC7A72
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF8434E3FB0
+		`0x7FF84175E473
+		`0x7FF8434E34F2
+		`0x7FF8434E3674
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE26C3
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		2
+
+		`0x7FF843E02690
+		2
+
+		`0x7FF843E4D4E4
+		`0x7FF843DC4D42
+		`0x7FF843DC4AAA
+		`0x7FF843E0FD53
+		`0x7FF843E0F7B0
+		`0x7FF843E0EC70
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E1DB35
+		`0x7FF843DF34DC
+		`0x7FF843DF30F3
+		`0x7FF843DF2EA0
+		`0x7FF84291D5B3
+		`0x7FF842926041
+		`0x7FF842925AD9
+		`0x7FF84292D915
+		`0x7FF84292CF74
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4E7D4
+		`0x7FF8418DD97C
+		`0x7FF84190C20A
+		`0x7FF841909AF3
+		`0x7FF84190A656
+		`0x7FF841909998
+		`0x7FF841909CEF
+		`0x7FF84190B82E
+		`0x7FF84190C337
+		`0x7FF8418C18C7
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843DED947
+		`0x7FF843DCFBAE
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DCD74D
+		`0x7FF843DCA7DD
+		`0x7FF843DC7EC7
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D1C4
+		`0x7FF843E00444
+		`0x7FF8423076D9
+		`0x7FF843DC9A1D
+		`0x7FF843E0DCDA
+		`0x7FF843E0DA8D
+		`0x7FF84230E3BB
+		blondie.exe`std::sys::pal::windows::os::exit()
+		blondie.exe`std::process::exit()
+		blondie.exe`clap::util::safe_exit(int)
+		blondie.exe`clap::error::Error<clap::error::format::RichFormatter>::exit<clap::error::format::RichFormatter>()
+		blondie.exe`clap::builder::command::impl$0::get_matches_from::closure$0<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, clap::error::Error<clap::error::format::RichFormatter>)
+		blondie.exe`enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >::unwrap_or_else<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter>,clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString> >(enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >, clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, core::panic::location::Location*)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF84304B410
+		`0x7FF84302451B
+		`0x7FF8417542D6
+		`0x7FF8417541FB
+		`0x7FF8417541B4
+		`0x7FF8417543BA
+		`0x7FF84306434C
+		`0x7FF843064488
+		`0x7FF843DC9A1D
+		`0x7FF843E0DCDA
+		`0x7FF843E0DA8D
+		`0x7FF84230E3BB
+		blondie.exe`std::sys::pal::windows::os::exit()
+		blondie.exe`std::process::exit()
+		blondie.exe`clap::util::safe_exit(int)
+		blondie.exe`clap::error::Error<clap::error::format::RichFormatter>::exit<clap::error::format::RichFormatter>()
+		blondie.exe`clap::builder::command::impl$0::get_matches_from::closure$0<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, clap::error::Error<clap::error::format::RichFormatter>)
+		blondie.exe`enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >::unwrap_or_else<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter>,clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString> >(enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >, clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, core::panic::location::Location*)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		blondie.exe`clap::output::help_template::impl$3::help::closure$0(clap::output::help_template::impl$3::help::closure_env$0, clap::builder::arg::Arg*)
+		blondie.exe`enum2$<core::option::Option<ref$<clap::builder::arg::Arg> > >::map<ref$<clap::builder::arg::Arg>,bool,clap::output::help_template::impl$3::help::closure_env$0>(enum2$<core::option::Option<ref$<clap::builder::arg::Arg> > >, clap::output::help_template::impl$3::help::closure_env$0)
+		blondie.exe`clap::output::help_template::HelpTemplate::help(enum2$<core::option::Option<ref$<clap::builder::arg::Arg> > >, clap::builder::styled_str::StyledStr*, ref$<str$>, bool, unsigned long long)
+		blondie.exe`clap::output::help_template::HelpTemplate::write_arg(clap::builder::arg::Arg*, bool, unsigned long long)
+		blondie.exe`clap::output::help_template::HelpTemplate::write_args(ref$<slice2$<ref$<clap::builder::arg::Arg> > >, ref$<str$>, tuple$<usize,alloc::string::String> (*)(clap::builder::arg::Arg*))
+		blondie.exe`clap::output::help_template::HelpTemplate::write_all_args()
+		blondie.exe`clap::output::help_template::HelpTemplate::write_templated_help(ref$<str$>)
+		blondie.exe`clap::output::help_template::AutoHelp::write_help()
+		blondie.exe`clap::output::help::write_help(clap::builder::styled_str::StyledStr*, clap::builder::command::Command*, clap::output::usage::Usage*, bool)
+		blondie.exe`clap::builder::command::Command::write_help_err(bool)
+		blondie.exe`clap::parser::validator::Validator::validate(enum2$<clap::parser::parser::ParseState>, clap::parser::arg_matcher::ArgMatcher*)
+		blondie.exe`clap::parser::parser::Parser::get_matches_with(clap::parser::arg_matcher::ArgMatcher*, clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::_do_parse(clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::try_get_matches_from_mut<std::env::ArgsOs,std::ffi::os_str::OsString>(std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E4D644
+		`0x7FF843E0FC9C
+		`0x7FF843E0F7B0
+		`0x7FF843E0EC70
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DDD829
+		`0x7FF843DDB44D
+		`0x7FF843DD2615
+		`0x7FF843DD38E3
+		`0x7FF843DD36BD
+		blondie.exe`core::ptr::non_null::NonNull<u8>::as_ptr(core::ptr::non_null::NonNull<u8>)
+		blondie.exe`alloc::alloc::Global::grow_impl(core::ptr::non_null::NonNull<u8>, core::alloc::layout::Layout, core::alloc::layout::Layout, bool)
+		blondie.exe`alloc::alloc::impl$1::grow(alloc::alloc::Global*, core::ptr::non_null::NonNull<u8>, core::alloc::layout::Layout, core::alloc::layout::Layout)
+		blondie.exe`alloc::raw_vec::finish_grow<alloc::alloc::Global>(enum2$<core::result::Result<core::alloc::layout::Layout,core::alloc::layout::LayoutError> >, enum2$<core::option::Option<tuple$<core::ptr::non_null::NonNull<u8>,core::alloc::layout::Layout> > >, alloc::alloc::Global*)
+		blondie.exe`core::result::impl$26::branch(enum2$<core::result::Result<core::ptr::non_null::NonNull<slice2$<u8> >,alloc::collections::TryReserveError> >)
+		blondie.exe`alloc::raw_vec::RawVec<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global>::grow_amortized<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global>(unsigned long long, unsigned long long)
+		blondie.exe`alloc::raw_vec::RawVec<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global>::reserve_for_push<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global>(unsigned long long)
+		blondie.exe`alloc::vec::Vec<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global>::push<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global>(tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>)
+		blondie.exe`clap::builder::styled_str::StyledStr::stylize_(enum2$<core::option::Option<clap::builder::styled_str::Style> >, alloc::string::String)
+		blondie.exe`clap::builder::styled_str::StyledStr::stylize<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>(enum2$<core::option::Option<clap::builder::styled_str::Style> >, alloc::string::String)
+		blondie.exe`clap::builder::styled_str::StyledStr::extend<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String,alloc::vec::into_iter::IntoIter<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global> >(alloc::vec::into_iter::IntoIter<tuple$<enum2$<core::option::Option<clap::builder::styled_str::Style> >,alloc::string::String>,alloc::alloc::Global>)
+		blondie.exe`clap::output::help_template::HelpTemplate::help(enum2$<core::option::Option<ref$<clap::builder::arg::Arg> > >, clap::builder::styled_str::StyledStr*, ref$<str$>, bool, unsigned long long)
+		blondie.exe`clap::output::help_template::HelpTemplate::write_subcommand(clap::builder::styled_str::StyledStr, clap::builder::command::Command*, bool, unsigned long long)
+		blondie.exe`clap::output::help_template::HelpTemplate::write_subcommands(clap::builder::command::Command*)
+		blondie.exe`clap::output::help_template::HelpTemplate::write_all_args()
+		blondie.exe`clap::output::help_template::HelpTemplate::write_templated_help(ref$<str$>)
+		blondie.exe`clap::output::help_template::AutoHelp::write_help()
+		blondie.exe`clap::output::help::write_help(clap::builder::styled_str::StyledStr*, clap::builder::command::Command*, clap::output::usage::Usage*, bool)
+		blondie.exe`clap::builder::command::Command::write_help_err(bool)
+		blondie.exe`clap::parser::validator::Validator::validate(enum2$<clap::parser::parser::ParseState>, clap::parser::arg_matcher::ArgMatcher*)
+		blondie.exe`clap::parser::parser::Parser::get_matches_with(clap::parser::arg_matcher::ArgMatcher*, clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::_do_parse(clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::try_get_matches_from_mut<std::env::ArgsOs,std::ffi::os_str::OsString>(std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E4D1C4
+		`0x7FF843E00444
+		`0x7FF843374FC4
+		`0x7FF8433743C4
+		`0x7FF843DC9A1D
+		`0x7FF843E0DCDA
+		`0x7FF843E0DA8D
+		`0x7FF84230E3BB
+		blondie.exe`std::sys::pal::windows::os::exit()
+		blondie.exe`std::process::exit()
+		blondie.exe`clap::util::safe_exit(int)
+		blondie.exe`clap::error::Error<clap::error::format::RichFormatter>::exit<clap::error::format::RichFormatter>()
+		blondie.exe`clap::builder::command::impl$0::get_matches_from::closure$0<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, clap::error::Error<clap::error::format::RichFormatter>)
+		blondie.exe`enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >::unwrap_or_else<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter>,clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString> >(enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >, clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, core::panic::location::Location*)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		2
+
+		`0x7FF843E50863
+		`0x7FF843DF2F86
+		`0x7FF843DF30E5
+		`0x7FF843DF2EA0
+		`0x7FF842D96C9F
+		`0x7FF842D88F55
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D224
+		`0x7FF843E2B3EF
+		`0x7FF843E83840
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DC8CDF
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE26B7
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DCA7BD
+		`0x7FF843DC7EC7
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		blondie.exe`core::str::iter::MatchIndicesInternal<ref$<str$> >::next<ref$<str$> >()
+		blondie.exe`core::str::iter::impl$91::next(core::str::iter::MatchIndices<ref$<str$> >*)
+		blondie.exe`alloc::str::impl$5::replace<ref$<str$> >(ref$<str$>, ref$<str$>, ref$<str$>)
+		blondie.exe`clap::output::help_template::replace_newline_var(clap::builder::styled_str::StyledStr*)
+		blondie.exe`clap::output::help_template::HelpTemplate::write_about(bool, bool)
+		blondie.exe`clap::output::help_template::HelpTemplate::write_templated_help(ref$<str$>)
+		blondie.exe`clap::output::help_template::AutoHelp::write_help()
+		blondie.exe`clap::output::help::write_help(clap::builder::styled_str::StyledStr*, clap::builder::command::Command*, clap::output::usage::Usage*, bool)
+		blondie.exe`clap::builder::command::Command::write_help_err(bool)
+		blondie.exe`clap::parser::validator::Validator::validate(enum2$<clap::parser::parser::ParseState>, clap::parser::arg_matcher::ArgMatcher*)
+		blondie.exe`clap::parser::parser::Parser::get_matches_with(clap::parser::arg_matcher::ArgMatcher*, clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::_do_parse(clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::try_get_matches_from_mut<std::env::ArgsOs,std::ffi::os_str::OsString>(std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF8430FF3E4
+		`0x7FF8430DBA10
+		`0x7FF842FFDC2E
+		`0x7FF842FFDB96
+		`0x7FF842FFC8FE
+		`0x7FF842FFC4C0
+		`0x7FF842FFE3A4
+		`0x7FF842FFC397
+		`0x7FF842FFC244
+		`0x7FF84306A0CA
+		`0x7FF84306A24D
+		`0x7FF84306442F
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE26C6
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		2
+
+		`0x7FF843DC06E7
+		`0x7FF843DBFA99
+		`0x7FF843DC4BCF
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE26D7
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DC7ADD
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843E1B2BD
+		`0x7FF843DCFB31
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF8418A3322
+		`0x7FF842D8AC21
+		`0x7FF842D88E00
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF8434E47CA
+		`0x7FF8434E3D72
+		`0x7FF8434E347A
+		`0x7FF8434E3674
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E50874
+		`0x7FF843DF2F86
+		`0x7FF843DF30E5
+		`0x7FF843DF2EA0
+		`0x7FF84302A2D5
+		`0x7FF84306A3CD
+		`0x7FF84306442F
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF84188DAA1
+		`0x7FF841747EDF
+		`0x7FF841747B11
+		`0x7FF8417479B9
+		`0x7FF8417476CC
+		`0x7FF841747214
+		`0x7FF84174710E
+		`0x7FF841757730
+		`0x7FF841756216
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D924
+		`0x7FF843E0FCFE
+		`0x7FF843E0F7B0
+		`0x7FF843E0EC70
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF8417525FA
+		`0x7FF841755B15
+		`0x7FF843064C26
+		`0x7FF843064C49
+		`0x7FF84175E473
+		`0x7FF843064292
+		`0x7FF843064414
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		blondie.exe`termcolor::impl$32::write<alloc::vec::Vec<u8,alloc::alloc::Global> >(termcolor::Ansi<alloc::vec::Vec<u8,alloc::alloc::Global> >*, ref$<slice2$<u8> >)
+		blondie.exe`termcolor::impl$26::write(termcolor::Buffer*, ref$<slice2$<u8> >)
+		blondie.exe`std::io::Write::write_all<termcolor::Buffer>(termcolor::Buffer*, ref$<slice2$<u8> >)
+		blondie.exe`clap::builder::styled_str::StyledStr::write_colored(termcolor::Buffer*)
+		blondie.exe`clap::output::fmt::Colorizer::print()
+		blondie.exe`clap::error::Error<clap::error::format::RichFormatter>::print<clap::error::format::RichFormatter>()
+		blondie.exe`clap::error::Error<clap::error::format::RichFormatter>::exit<clap::error::format::RichFormatter>()
+		blondie.exe`clap::builder::command::impl$0::get_matches_from::closure$0<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, clap::error::Error<clap::error::format::RichFormatter>)
+		blondie.exe`enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >::unwrap_or_else<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter>,clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString> >(enum2$<core::result::Result<clap::parser::matches::arg_matches::ArgMatches,clap::error::Error<clap::error::format::RichFormatter> > >, clap::builder::command::impl$0::get_matches_from::closure_env$0<std::env::ArgsOs,std::ffi::os_str::OsString>, core::panic::location::Location*)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DD7DC2
+		`0x7FF843DF3523
+		`0x7FF843DF30F3
+		`0x7FF843DF2EA0
+		`0x7FF843E82808
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D9E4
+		`0x7FF843DF7BAC
+		`0x7FF843DE288A
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E4D784
+		`0x7FF843E0F37B
+		`0x7FF843E0F207
+		`0x7FF843DCDCE5
+		`0x7FF843DCDB9F
+		`0x7FF843DC6977
+		`0x7FF843DC688C
+		`0x7FF84189C3DA
+		`0x7FF842D8A2CD
+		`0x7FF842D88E00
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		2
+
+		`0x7FF843E4D0C4
+		`0x7FF8418C2941
+		`0x7FF8418C2610
+		`0x7FF8418C23F8
+		`0x7FF8418C183F
+		`0x7FF8418C2B43
+		`0x7FF8418C1E72
+		`0x7FF8418C189D
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843DED947
+		`0x7FF843DCFBAE
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D644
+		`0x7FF843E0E8A8
+		`0x7FF843E0E7D2
+		`0x7FF843E832DC
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D4E4
+		`0x7FF843DC4D42
+		`0x7FF843DC4AAA
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		2
+
+		`0x7FF843E50874
+		`0x7FF843DF2F86
+		`0x7FF843DF30E5
+		`0x7FF843DF2EA0
+		`0x7FF8418449EE
+		`0x7FF84184482B
+		`0x7FF841849177
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE1D54
+		`0x7FF843DC0446
+		`0x7FF842079062
+		`0x7FF842096165
+		`0x7FF8420998CA
+		`0x7FF842099A2C
+		`0x7FF84208444C
+		`0x7FF8420842B5
+		`0x7FF84209974F
+		`0x7FF8420964FF
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF842D88AB0
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DDD196
+		`0x7FF843DDB44D
+		`0x7FF843DF83F3
+		`0x7FF843DF7DC7
+		`0x7FF843DF7BDD
+		`0x7FF843DE288A
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DD706E
+		`0x7FF843DD5B74
+		`0x7FF843DD47B1
+		`0x7FF843E0F8CD
+		`0x7FF843E0F04B
+		`0x7FF843E0F6E6
+		`0x7FF843E0EC70
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E541A4
+		`0x7FF843DDDF6F
+		`0x7FF843DDB44D
+		`0x7FF843E0323C
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E4FB34
+		`0x7FF843E197E6
+		`0x7FF843E1961C
+		`0x7FF842D97198
+		`0x7FF842D8AC01
+		`0x7FF842D88E00
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D4E4
+		`0x7FF843DC4D42
+		`0x7FF843DC4AAA
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		3
+
+		`0x7FF843E4D1C4
+		`0x7FF843E0FD71
+		`0x7FF843E0F7B0
+		`0x7FF843E0EC70
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		2
+
+		`0x7FF843DF8474
+		`0x7FF843DF7DC7
+		`0x7FF843DF7BDD
+		`0x7FF843DE288A
+		`0x7FF843E0EC38
+		`0x7FF843E0EB58
+		`0x7FF843DCFB5D
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D6C4
+		`0x7FF843DC5157
+		`0x7FF843DC43EA
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843E1B2BD
+		`0x7FF843DCFB31
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DF840A
+		`0x7FF843DF7DC7
+		`0x7FF843DF7BDD
+		`0x7FF843DE288A
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E4D444
+		`0x7FF8418E246D
+		`0x7FF8418E2218
+		blondie.exe`pre_cpp_initialization()
+		`0x7FF84175E473
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843E4D224
+		`0x7FF8418BE8A6
+		`0x7FF8418BE60D
+		`0x7FF84188B8AB
+		`0x7FF84188AF57
+		`0x7FF843C4A525
+		`0x7FF843C4A79F
+		`0x7FF843C409B9
+		`0x7FF843C40F85
+		`0x7FF843C40CA4
+		`0x7FF843C40AAE
+		`0x7FF843C278EF
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		blondie.exe`core::iter::adapters::map::map_fold::closure$0<ref$<clap::mkeymap::Key>,ref$<enum2$<clap::mkeymap::KeyType> >,usize,clap::mkeymap::impl$6::keys::closure_env$0,core::iter::adapters::map::map_fold::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,usize,usize,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0>,core::iter::traits::accum::impl$48::sum::closure_env$0<core::iter::adapters::map::Map<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0> > > > >(core::iter::adapters::map::map_fold::closure_env$0<ref$<clap::mkeymap::Key>,ref$<enum2$<clap::mkeymap::KeyType> >,usize,clap::mkeymap::impl$6::keys::closure_env$0,core::iter::adapters::map::map_fold::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,usize,usize,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0>,core::iter::traits::accum::impl$48::sum::closure_env$0<core::iter::adapters::map::Map<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0> > > > >*, unsigned long long, clap::mkeymap::Key*)
+		blondie.exe`core::slice::iter::impl$181::fold<clap::mkeymap::Key,usize,core::iter::adapters::map::map_fold::closure_env$0<ref$<clap::mkeymap::Key>,ref$<enum2$<clap::mkeymap::KeyType> >,usize,clap::mkeymap::impl$6::keys::closure_env$0,core::iter::adapters::map::map_fold::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,usize,usize,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0>,core::iter::traits::accum::impl$48::sum::closure_env$0<core::iter::adapters::map::Map<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0> > > > > >(core::slice::iter::Iter<clap::mkeymap::Key>, unsigned long long, core::iter::adapters::map::map_fold::closure_env$0<ref$<clap::mkeymap::Key>,ref$<enum2$<clap::mkeymap::KeyType> >,usize,clap::mkeymap::impl$6::keys::closure_env$0,core::iter::adapters::map::map_fold::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,usize,usize,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0>,core::iter::traits::accum::impl$48::sum::closure_env$0<core::iter::adapters::map::Map<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0> > > > >)
+		blondie.exe`core::iter::adapters::map::impl$2::fold<ref$<enum2$<clap::mkeymap::KeyType> >,core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0,usize,core::iter::adapters::map::map_fold::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,usize,usize,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0>,core::iter::traits::accum::impl$48::sum::closure_env$0<core::iter::adapters::map::Map<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0> > > > >(core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>, unsigned long long, core::iter::adapters::map::map_fold::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,usize,usize,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0>,core::iter::traits::accum::impl$48::sum::closure_env$0<core::iter::adapters::map::Map<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,core::iter::adapters::filter::impl$2::count::to_usize::closure_env$0<ref$<enum2$<clap::mkeymap::KeyType> >,clap::parser::parser::impl$1::get_matches_with::closure_env$0> > > >)
+		blondie.exe`core::iter::adapters::filter::impl$2::count<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,clap::parser::parser::impl$1::get_matches_with::closure_env$0>(core::iter::adapters::filter::Filter<core::iter::adapters::map::Map<core::slice::iter::Iter<clap::mkeymap::Key>,clap::mkeymap::impl$6::keys::closure_env$0>,clap::parser::parser::impl$1::get_matches_with::closure_env$0>)
+		blondie.exe`clap::parser::parser::Parser::get_matches_with(clap::parser::arg_matcher::ArgMatcher*, clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::_do_parse(clap_lex::RawArgs*, clap_lex::ArgCursor)
+		blondie.exe`clap::builder::command::Command::try_get_matches_from_mut<std::env::ArgsOs,std::ffi::os_str::OsString>(std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		blondie.exe`__chkstk()
+		blondie.exe`blondie::impl$6::augment_subcommands(clap::builder::command::Command)
+		blondie.exe`blondie::impl$3::augment_args(clap::builder::command::Command)
+		blondie.exe`blondie::impl$1::command()
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DCD062
+		`0x7FF843DCC773
+		`0x7FF843DCC368
+		`0x7FF843DCAC3F
+		`0x7FF843DCA613
+		`0x7FF843DCA3AC
+		`0x7FF843DC73AD
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE22F3
+		`0x7FF843DE04A8
+		`0x7FF843DE00A5
+		`0x7FF843E83828
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF8418C1C44
+		`0x7FF8418C189D
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843DED947
+		`0x7FF843DCFBAE
+		`0x7FF843DC73E4
+		`0x7FF843DC6AF4
+		`0x7FF843E8375E
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843E4D4E4
+		`0x7FF843DC4D42
+		`0x7FF843DC4AAA
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		4
+
+		`0x7FF843DC7AD9
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843DC4C14
+		`0x7FF843DC4479
+		`0x7FF843DC88A8
+		`0x7FF843DC7B29
+		`0x7FF843E83AFD
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE279E
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
+		`0x7FF843DE1CE6
+		`0x7FF843DC0446
+		`0x7FF842414AB2
+		`0x7FF842418385
+		`0x7FF842D8E12D
+		`0x7FF842D8E019
+		`0x7FF843E50E64
+		`0x7FF841716C84
+		`0x7FF841C7257E
+		`0x7FF842D89016
+		`0x7FF843DC9A1D
+		`0x7FF843E1C2C7
+		`0x7FF843E1C05A
+		`0x7FF843E1C0E0
+		`0x7FF843E1C0E0
+		`0x7FF843E83C42
+		`0x7FF843E24DBB
+		`0x7FF843E24C43
+		`0x7FF843E24BEE
+		1
+
+		`0x7FF843DE26D5
+		`0x7FF843E0EC38
+		`0x7FF843E0EBE3
+		`0x7FF843E12230
+		`0x7FF843E031BA
+		`0x7FF842307344
+		`0x7FF843E026B1
+		2
+
+		blondie.exe`std::path::Path::file_name()
+		blondie.exe`clap::builder::command::Command::try_get_matches_from_mut<std::env::ArgsOs,std::ffi::os_str::OsString>(std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches_from<std::env::ArgsOs,std::ffi::os_str::OsString>(clap::builder::command::Command, std::env::ArgsOs)
+		blondie.exe`clap::builder::command::Command::get_matches(clap::builder::command::Command)
+		blondie.exe`clap::derive::Parser::parse<blondie::Blondie>()
+		blondie.exe`blondie::main()
+		blondie.exe`core::ops::function::FnOnce::call_once<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),tuple$<> >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::sys_common::backtrace::__rust_begin_short_backtrace<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(),enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)())
+		blondie.exe`std::rt::lang_start::closure$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(std::rt::lang_start::closure_env$0<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >*)
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal::closure$2()
+		blondie.exe`std::panicking::try::do_call()
+		blondie.exe`std::panicking::try()
+		blondie.exe`std::panic::catch_unwind()
+		blondie.exe`std::rt::lang_start_internal()
+		blondie.exe`std::rt::lang_start<enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > >(enum2$<core::result::Result<tuple$<>,enum2$<blondie::Error> > > (*)(), long long, unsigned char**, unsigned char)
+		blondie.exe`main
+		blondie.exe`invoke_main()
+		blondie.exe`__scrt_common_main_seh()
+		`0x7FF842307344
+		`0x7FF843E026B1
+		1
+
