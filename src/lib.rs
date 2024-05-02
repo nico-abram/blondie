@@ -545,11 +545,7 @@ unsafe fn trace_from_process_id(
 
     if context.show_kernel_samples {
         let kernel_module_paths = list_kernel_modules();
-        context.image_paths.extend(
-            kernel_module_paths
-                .into_iter()
-                .map(|(path, image_base, image_size)| (path, image_base, image_size)),
-        );
+        context.image_paths.extend(kernel_module_paths);
     }
 
     Ok(context)
