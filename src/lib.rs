@@ -799,6 +799,7 @@ impl CollectionResults {
         let mut v = vec![];
 
         for callstack in self.iter_callstacks() {
+            let mut empty_callstack = true;
             callstack.iter_resolved_addresses(
                 &pdb_db,
                 &mut v,
@@ -809,8 +810,10 @@ impl CollectionResults {
                             return Ok(());
                         }
                     }
+                    let mut printed = false;
                     for symbol_name in symbol_names {
                         if let Some(image_name) = image_name {
+                            printed = true;
                             if displacement != 0 {
                                 writeln!(w, "\t\t{image_name}`{symbol_name}+0x{displacement:X}")?;
                             } else {
@@ -819,22 +822,29 @@ impl CollectionResults {
                         } else {
                             // Image name not found
                             if displacement != 0 {
+                                printed = true;
                                 writeln!(w, "\t\t{symbol_name}+0x{displacement:X}")?;
                             } else {
-                                writeln!(w, "\t\t{symbol_name}")?;
+                                if !symbol_name.is_empty() {
+                                    printed = true;
+                                    writeln!(w, "\t\t{symbol_name}")?;
+                                }
                             }
                         }
                     }
-                    if symbol_names.is_empty() {
+                    if symbol_names.is_empty() || !printed {
                         // Symbol not found
                         writeln!(w, "\t\t`0x{address:X}")?;
                     }
+                    empty_callstack = false;
                     Ok(())
                 },
             )?;
-            //}
-            let count = callstack.sample_count;
-            write!(w, "\t\t{count}\n\n")?;
+
+            if !empty_callstack {
+                let count = callstack.sample_count;
+                write!(w, "\t\t{count}\n\n")?;
+            }
         }
         Ok(())
     }
