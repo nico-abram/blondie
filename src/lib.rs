@@ -824,11 +824,9 @@ impl CollectionResults {
                             if displacement != 0 {
                                 printed = true;
                                 writeln!(w, "\t\t{symbol_name}+0x{displacement:X}")?;
-                            } else {
-                                if !symbol_name.is_empty() {
-                                    printed = true;
-                                    writeln!(w, "\t\t{symbol_name}")?;
-                                }
+                            } else if !symbol_name.is_empty() {
+                                printed = true;
+                                writeln!(w, "\t\t{symbol_name}")?;
                             }
                         }
                     }
