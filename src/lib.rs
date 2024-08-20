@@ -5,9 +5,20 @@
 //! Or you can use [`trace_child`] to start tracing an [`std::process::Child`].
 //! You can also trace an arbitrary process using [`trace_pid`].
 
+#![warn(missing_docs)]
 #![allow(clippy::field_reassign_with_default)]
 
+use std::ffi::OsString;
+use std::io::{Read, Write};
+use std::mem::size_of;
+use std::os::windows::ffi::OsStringExt;
+use std::path::PathBuf;
+use std::ptr::{addr_of, addr_of_mut};
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use object::Object;
+use pdb_addr2line::pdb::PDB;
+use pdb_addr2line::ContextPdbData;
 use windows::core::{GUID, PCSTR, PSTR};
 use windows::Win32::Foundation::{
     CloseHandle, GetLastError, ERROR_SUCCESS, ERROR_WMI_INSTANCE_NOT_FOUND, HANDLE,
@@ -36,18 +47,15 @@ use windows::Win32::System::Threading::{
     WaitForSingleObject, CREATE_SUSPENDED, PROCESS_ALL_ACCESS, THREAD_PRIORITY_TIME_CRITICAL,
 };
 
-use pdb_addr2line::{pdb::PDB, ContextPdbData};
-
-use std::ffi::OsString;
-use std::io::{Read, Write};
-use std::mem::size_of;
-use std::os::windows::ffi::OsStringExt;
-use std::path::PathBuf;
-use std::ptr::{addr_of, addr_of_mut};
-use std::sync::atomic::{AtomicBool, Ordering};
+/// Maximum stack depth/height of traces.
+// msdn says 192 but I got some that were bigger
+// const MAX_STACK_DEPTH: usize = 192;
+const MAX_STACK_DEPTH: usize = 200;
 
 /// map[array_of_stacktrace_addrs] = sample_count
 type StackMap = rustc_hash::FxHashMap<[u64; MAX_STACK_DEPTH], u64>;
+
+/// Stateful context provided to `event_record_callback`.
 struct TraceContext {
     target_process_handle: HANDLE,
     stack_counts_hashmap: StackMap,
@@ -60,9 +68,11 @@ struct TraceContext {
 }
 impl TraceContext {
     /// The Context takes ownership of the handle.
-    /// SAFETY:
-    ///  - target_process_handle must be a valid process handle.
-    ///  - target_proc_id must be the id of the process.
+    ///
+    /// # Safety
+    ///
+    /// - `target_process_handle` must be a valid process handle.
+    /// - `target_proc_id` must be the id of the same process as the handle.
     unsafe fn new(
         target_process_handle: HANDLE,
         target_proc_pid: u32,
@@ -94,10 +104,8 @@ impl Drop for TraceContext {
         }
     }
 }
-// msdn says 192 but I got some that were bigger
-//const MAX_STACK_DEPTH: usize = 192;
-const MAX_STACK_DEPTH: usize = 200;
 
+/// The errors that may occur in blondie.
 #[derive(Debug)]
 pub enum Error {
     /// Blondie requires administrator privileges
@@ -117,12 +125,8 @@ pub enum Error {
     /// This should never happen
     UnknownError,
 }
-type Result<T> = std::result::Result<T, Error>;
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::Write(err)
-    }
-}
+/// A [`std::result::Result`] alias where the `Err` case is [`blondie::Error`](Error).
+pub type Result<T> = std::result::Result<T, Error>;
 
 fn get_last_error(extra: &'static str) -> Error {
     const BUF_LEN: usize = 1024;
@@ -140,11 +144,10 @@ fn get_last_error(extra: &'static str) -> Error {
         )
     };
     assert!(chars_written != 0);
-    let code_str = unsafe {
-        std::ffi::CStr::from_ptr(buf.as_ptr().cast())
-            .to_str()
-            .unwrap_or("Invalid utf8 in error")
-    };
+    let code_str = std::ffi::CStr::from_bytes_until_nul(&buf)
+        .unwrap()
+        .to_str()
+        .unwrap_or("Invalid utf8 in error");
     Error::Other(code, code_str.to_string(), extra)
 }
 
@@ -157,7 +160,7 @@ unsafe fn handle_from_process_id(process_id: u32) -> Result<HANDLE> {
 }
 
 unsafe fn wait_for_process_by_handle(handle: HANDLE) -> Result<()> {
-    let ret = WaitForSingleObject(handle, 0xFFFFFFFF);
+    let ret = WaitForSingleObject(handle, 0xffffffff);
     match ret.0 {
         0 => Ok(()),
         0x00000080 => Err(Error::WaitOnChildErrAbandoned),
@@ -197,7 +200,12 @@ fn acquire_privileges() -> Result<()> {
     }
     Ok(())
 }
-/// SAFETY: is_suspended must only be true if `target_process` is suspended
+
+/// The main tracing logic. Traces the process with the given `target_process_id`.
+///
+/// # Safety
+///
+/// `is_suspended` may only be true if `target_process` is suspended
 unsafe fn trace_from_process_id(
     target_process_id: u32,
     is_suspended: bool,
@@ -207,7 +215,7 @@ unsafe fn trace_from_process_id(
     winver_info.dwOSVersionInfoSize = size_of::<OSVERSIONINFOA>() as u32;
     let ret = GetVersionExA(&mut winver_info);
     if ret.0 == 0 {
-        return Err(get_last_error("TraceSetInformation interval"));
+        return Err(get_last_error("GetVersionExA"));
     }
     // If we're not win7 or more, return unsupported
     // https://docs.microsoft.com/en-us/windows/win32/sysinfo/operating-system-version
@@ -347,7 +355,7 @@ unsafe fn trace_from_process_id(
 
     let target_proc_handle = handle_from_process_id(target_process_id)?;
     let mut context = TraceContext::new(target_proc_handle, target_process_id, kernel_stacks)?;
-    //TODO: Do we need to Box the context?
+    // TODO: Do we need to Box the context?
 
     let mut log = EVENT_TRACE_LOGFILEA::default();
     log.LoggerName = PSTR(kernel_logger_name_with_nul.as_mut_ptr());
@@ -487,17 +495,16 @@ unsafe fn trace_from_process_id(
         return Err(get_last_error("OpenTraceA processing"));
     }
 
-    let (sender, recvr) = std::sync::mpsc::channel();
-    std::thread::spawn(move || {
-        // This blocks
+    let processing_thread = std::thread::spawn(move || {
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+        // This blocks
         ProcessTrace(&[trace_processing_handle], None, None);
 
         let ret = CloseTrace(trace_processing_handle);
         if ret != ERROR_SUCCESS {
-            panic!("Error closing trace");
+            return Err(get_last_error("Error closing trace"));
         }
-        sender.send(()).unwrap();
+        Ok(())
     });
 
     // Wait until we know for sure the trace is running
@@ -537,11 +544,12 @@ unsafe fn trace_from_process_id(
     if ret != ERROR_SUCCESS {
         return Err(get_last_error("ControlTraceA STOP ProcessTrace"));
     }
+
     // Block until processing thread is done
     // (Safeguard to make sure we don't deallocate the context before the other thread finishes using it)
-    if recvr.recv().is_err() {
-        return Err(Error::UnknownError);
-    }
+    processing_thread
+        .join()
+        .map_err(|_err_any| Error::UnknownError)??;
 
     if context.show_kernel_samples {
         let kernel_module_paths = list_kernel_modules();
@@ -724,7 +732,7 @@ impl<'a> CallStack<'a> {
     ///
     /// This also performs symbol resolution if possible, and tries to find the image (DLL/EXE) it comes from
     fn iter_resolved_addresses<
-        F: for<'b> FnMut(u64, u64, &'b [&'b str], Option<&'b str>) -> Result<()>,
+        F: for<'b> FnMut(u64, u64, &'b [&'b str], Option<&'b str>) -> std::io::Result<()>,
     >(
         &'a self,
         pdb_db: &'a PdbDb,
@@ -750,7 +758,7 @@ impl<'a> CallStack<'a> {
             let module = pdb_db.range(..addr).next_back();
             let module = match module {
                 None => {
-                    f(addr, 0, &[], None)?;
+                    (f)(addr, 0, &[], None).map_err(Error::Write)?;
                     symbol_names_storage = reuse_vec(symbol_names);
                     continue;
                 }
@@ -762,7 +770,7 @@ impl<'a> CallStack<'a> {
             let procedure_frames = match module.3.find_frames(addr_in_module as u32) {
                 Ok(Some(x)) => x,
                 _ => {
-                    f(addr, 0, &[], image_name)?;
+                    (f)(addr, 0, &[], image_name).map_err(Error::Write)?;
                     symbol_names_storage = reuse_vec(symbol_names);
                     continue;
                 }
@@ -770,7 +778,7 @@ impl<'a> CallStack<'a> {
             for frame in &procedure_frames.frames {
                 symbol_names.push(frame.function.as_deref().unwrap_or("Unknown"));
             }
-            f(addr, displacement, &symbol_names, image_name)?;
+            (f)(addr, displacement, &symbol_names, image_name).map_err(Error::Write)?;
             symbol_names_storage = reuse_vec(symbol_names);
         }
         *v = symbol_names_storage;
@@ -837,7 +845,7 @@ impl CollectionResults {
 
             if !empty_callstack {
                 let count = callstack.sample_count;
-                write!(w, "\t\t{count}\n\n")?;
+                write!(w, "\t\t{count}\n\n").map_err(Error::Write)?;
             }
         }
         Ok(())
@@ -888,7 +896,7 @@ fn list_kernel_modules() -> Vec<(OsString, u64, u64)> {
         )
     };
     if retcode < 0 {
-        //println!("Failed to load kernel modules");
+        // println!("Failed to load kernel modules");
         return vec![];
     }
     let number_of_modules = unsafe { out_buf.as_ptr().cast::<u32>().read_unaligned() as usize };
@@ -920,7 +928,8 @@ fn list_kernel_modules() -> Vec<(OsString, u64, u64)> {
     let kernel_module_paths = modules
         .iter()
         .filter_map(|module| {
-            unsafe { std::ffi::CStr::from_ptr(module.FullPathName.as_ptr().cast()) }
+            std::ffi::CStr::from_bytes_until_nul(&module.FullPathName)
+                .unwrap()
                 .to_str()
                 .ok()
                 .map(|mod_str_filepath| {
