@@ -687,7 +687,7 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
             };
 
             let symbol_cache =
-                symsrv::SymbolCache::new(symsrv::get_symbol_path_from_environment(""), false);
+                symsrv::SymbolCache::new(symsrv::get_symbol_path_from_environment(), false);
 
             let mut guid_string = String::new();
             use std::fmt::Write;
