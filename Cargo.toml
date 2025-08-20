@@ -33,7 +33,7 @@ windows = { version = "0.61", features = [
     "Win32_Storage_FileSystem",
     "Win32_System_SystemInformation"
 ] }
-rustc-hash = "1.1.0"
+rustc-hash = "2"
 # Only for the binary crate
 inferno = { version = "0.12", optional = true }
 clap = { version = "4.0.26", optional = true, features = ["derive"] }
