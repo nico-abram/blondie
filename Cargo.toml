@@ -43,7 +43,7 @@ symsrv = "0.2"
 # Needed for symsrv
 tokio = { version = "1.17.0", features = ["fs", "rt"] }
 # To extract pdb paths from image files
-object = "0.30"
+object = "0.37"
 
 [profile.release]
 debug = true
