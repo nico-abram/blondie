@@ -511,12 +511,12 @@ unsafe fn trace_from_process_id(
         // Therefore, we call the undocumented NtResumeProcess. We should probably manually call CreateProcess.
         // Now that https://github.com/rust-lang/rust/issues/96723 is merged, we could use that on nightly
         let ntdll =
-            windows::Win32::System::LibraryLoader::GetModuleHandleA(PCSTR("ntdll.dll\0".as_ptr()))
+            windows::Win32::System::LibraryLoader::GetModuleHandleA(PCSTR(c"ntdll.dll".as_ptr()))
                 .expect("Could not find ntdll.dll");
         #[allow(non_snake_case)]
         let NtResumeProcess = windows::Win32::System::LibraryLoader::GetProcAddress(
             ntdll,
-            PCSTR("NtResumeProcess\0".as_ptr()),
+            PCSTR(c"NtResumeProcess".as_ptr()),
         )
         .expect("Could not find NtResumeProcess in ntdll.dll");
         #[allow(non_snake_case)]
