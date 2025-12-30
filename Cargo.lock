@@ -252,9 +252,9 @@ dependencies = [
 
 [[package]]
 name = "elsa"
-version = "1.7.0"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b4b5d23ed6b6948d68240aafa4ac98e568c9a020efd9d4201a6288bc3006e09"
+checksum = "9abf33c656a7256451ebb7d0082c5a471820c31269e49d807c538c252352186e"
 dependencies = [
  "stable_deref_trait",
 ]
@@ -317,9 +317,9 @@ dependencies = [
 
 [[package]]
 name = "fallible-iterator"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4443176a9f2c162692bd3d352d745ef9413eec5782a80d8fd6f8a1ac692a07f7"
+checksum = "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649"
 
 [[package]]
 name = "flate2"
@@ -788,28 +788,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "pdb"
-version = "0.8.0"
+name = "pdb-addr2line"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82040a392923abe6279c00ab4aff62d5250d1c8555dc780e4b02783a7aa74863"
+checksum = "b2a2e496e34cd96a1bb26f681e5adb11c98f1e5378e294e60c06c0cf04c526ba"
+dependencies = [
+ "bitflags 2.10.0",
+ "elsa",
+ "maybe-owned",
+ "pdb2",
+ "range-collections",
+ "thiserror",
+]
+
+[[package]]
+name = "pdb2"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "266b8733697ccc3aa405a9b2cf485a42746ad1cf73d3b0497b79b24f9e874a71"
 dependencies = [
  "fallible-iterator",
  "scroll",
  "uuid",
-]
-
-[[package]]
-name = "pdb-addr2line"
-version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4e89a9f2f40b2389ba6da0814c8044bf942bece03dffa1514f84e3b525f4f9a"
-dependencies = [
- "bitflags 1.3.2",
- "elsa",
- "maybe-owned",
- "pdb",
- "range-collections",
- "thiserror 1.0.38",
 ]
 
 [[package]]
@@ -909,12 +909,13 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "range-collections"
-version = "0.2.4"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61fdfd79629e2b44a1d34b4d227957174cb858e6b86ee45fad114edbcfc903ab"
+checksum = "861706ea9c4aded7584c5cd1d241cec2ea7f5f50999f236c22b65409a1f1a0d0"
 dependencies = [
  "binary-merge",
  "inplace-vec-builder",
+ "ref-cast",
  "smallvec",
 ]
 
@@ -935,7 +936,27 @@ checksum = "a4e608c6638b9c18977b00b475ac1f28d14e84b27d8d42f70e0bf1e3dec127ac"
 dependencies = [
  "getrandom 0.2.8",
  "libredox",
- "thiserror 2.0.17",
+ "thiserror",
+]
+
+[[package]]
+name = "ref-cast"
+version = "1.0.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f354300ae66f76f1c85c5f84693f0ce81d747e2c3f21a45fef496d89c960bf7d"
+dependencies = [
+ "ref-cast-impl",
+]
+
+[[package]]
+name = "ref-cast-impl"
+version = "1.0.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7186006dcb21920990093f30e3dea63b7d6e977bf1256be20c3563a5db070da"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -1109,9 +1130,9 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "scroll"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04c565b551bafbef4157586fa379538366e4385d42082f255bfd96e4fe8519da"
+checksum = "6ab8598aa408498679922eff7fa985c25d58a90771bd6be794434c5277eab1a6"
 
 [[package]]
 name = "serde"
@@ -1227,7 +1248,7 @@ dependencies = [
  "http",
  "reqwest",
  "scopeguard",
- "thiserror 2.0.17",
+ "thiserror",
  "tokio",
 ]
 
@@ -1270,31 +1291,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.38"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a9cd18aa97d5c45c6603caea1da6628790b37f7a34b6ca89522331c5180fed0"
-dependencies = [
- "thiserror-impl 1.0.38",
-]
-
-[[package]]
-name = "thiserror"
 version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
 dependencies = [
- "thiserror-impl 2.0.17",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "1.0.38"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fb327af4685e4d03fa8cbcf1716380da910eeb2bb8be417e7f9fd3fb164f36f"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.107",
+ "thiserror-impl",
 ]
 
 [[package]]
