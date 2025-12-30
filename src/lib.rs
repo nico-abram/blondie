@@ -39,6 +39,7 @@ use windows::Win32::System::Threading::{
 use pdb_addr2line::{pdb::PDB, ContextPdbData};
 
 use std::ffi::OsString;
+use std::fs;
 use std::io::{Read, Write};
 use std::mem::size_of;
 use std::os::windows::ffi::OsStringExt;
@@ -510,9 +511,10 @@ unsafe fn trace_from_process_id(
         // std Command/Child do not expose the main thread handle or id, so we can't easily call ResumeThread
         // Therefore, we call the undocumented NtResumeProcess. We should probably manually call CreateProcess.
         // Now that https://github.com/rust-lang/rust/issues/96723 is merged, we could use that on nightly
-        let ntdll =
-            windows::Win32::System::LibraryLoader::GetModuleHandleA(PCSTR(c"ntdll.dll".as_ptr().cast::<u8>()))
-                .expect("Could not find ntdll.dll");
+        let ntdll = windows::Win32::System::LibraryLoader::GetModuleHandleA(PCSTR(
+            c"ntdll.dll".as_ptr().cast::<u8>(),
+        ))
+        .expect("Could not find ntdll.dll");
         #[allow(non_snake_case)]
         let NtResumeProcess = windows::Win32::System::LibraryLoader::GetProcAddress(
             ntdll,
@@ -681,13 +683,17 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
 
             pdb_db.push((*image_base, *image_size, image_name.to_owned(), pdb_ctx));
         } else if use_symsrv {
-            let pdb_filename = match pdb_path.file_name() {
+            let pdb_filename = match pdb_path.file_name().and_then(|x| x.to_str()) {
                 Some(x) => x,
                 _ => continue,
             };
 
-            let symbol_cache =
-                symsrv::SymbolCache::new(symsrv::get_symbol_path_from_environment(""), false);
+            let symbol_path_env = symsrv::get_symbol_path_from_environment();
+            let symbol_path = symbol_path_env
+                .as_deref()
+                .unwrap_or("srv**https://msdl.microsoft.com/download/symbols");
+            let parsed_symbol_path = symsrv::parse_nt_symbol_path(symbol_path);
+            let downloader = symsrv::SymsrvDownloader::new(parsed_symbol_path);
 
             let mut guid_string = String::new();
             use std::fmt::Write;
@@ -702,18 +708,21 @@ fn find_pdbs(images: &[(OsString, u64, u64)]) -> Vec<(u64, u64, OsString, OwnedP
                 write!(&mut guid_string, "{byte:02X}").unwrap();
             }
             write!(&mut guid_string, "{pdb_age:X}").unwrap();
-            let guid_str = std::ffi::OsStr::new(&guid_string);
 
-            let relative_path: PathBuf = [pdb_filename, guid_str, pdb_filename].iter().collect();
+            let Ok(rt) = &rt else {
+                continue;
+            };
 
-            if let Ok(rt) = &rt {
-                if let Ok(file_contents) = rt.block_on(symbol_cache.get_file(&relative_path)) {
-                    let pdb_ctx = match owned_pdb(file_contents.to_vec()) {
-                        Some(x) => x,
-                        _ => continue,
-                    };
-                    pdb_db.push((*image_base, *image_size, image_name.to_owned(), pdb_ctx));
-                }
+            let Ok(path) = rt.block_on(downloader.get_file(pdb_filename, &guid_string)) else {
+                continue;
+            };
+
+            let Ok(pdb_bytes) = fs::read(path) else {
+                continue;
+            };
+
+            if let Some(pdb_ctx) = owned_pdb(pdb_bytes) {
+                pdb_db.push((*image_base, *image_size, image_name.to_owned(), pdb_ctx));
             }
         }
     }
