@@ -8,11 +8,11 @@
 #![allow(clippy::field_reassign_with_default)]
 
 use object::Object;
-use windows::core::{GUID, PCSTR, PSTR};
+use windows::core::{self, GUID, PCSTR, PSTR};
 use windows::Win32::Foundation::{
-    CloseHandle, GetLastError, ERROR_SUCCESS, ERROR_WMI_INSTANCE_NOT_FOUND, HANDLE,
-    INVALID_HANDLE_VALUE, WIN32_ERROR,
+    CloseHandle, GetLastError, ERROR_SUCCESS, ERROR_WMI_INSTANCE_NOT_FOUND, HANDLE, WIN32_ERROR,
 };
+use windows::Win32::Security::SE_SYSTEM_PROFILE_NAME;
 use windows::Win32::Security::{
     AdjustTokenPrivileges, LookupPrivilegeValueW, SE_PRIVILEGE_ENABLED, TOKEN_ADJUST_PRIVILEGES,
     TOKEN_PRIVILEGES,
@@ -30,7 +30,6 @@ use windows::Win32::System::Diagnostics::Etw::{
     WNODE_FLAG_TRACED_GUID,
 };
 use windows::Win32::System::SystemInformation::{GetVersionExA, OSVERSIONINFOA};
-use windows::Win32::System::SystemServices::SE_SYSTEM_PROFILE_NAME;
 use windows::Win32::System::Threading::{
     GetCurrentProcess, GetCurrentThread, OpenProcess, OpenProcessToken, SetThreadPriority,
     WaitForSingleObject, CREATE_SUSPENDED, PROCESS_ALL_ACCESS, THREAD_PRIORITY_TIME_CRITICAL,
@@ -42,6 +41,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::io::{Read, Write};
 use std::mem::size_of;
+use std::os::raw::c_void;
 use std::os::windows::ffi::OsStringExt;
 use std::path::PathBuf;
 use std::ptr::{addr_of, addr_of_mut};
@@ -88,9 +88,12 @@ impl Drop for TraceContext {
     fn drop(&mut self) {
         // SAFETY: TraceContext invariants ensure these are valid
         unsafe {
-            let ret = CloseHandle(self.target_process_handle);
-            if ret.0 == 0 {
-                panic!("TraceContext::CloseHandle error:{:?}", get_last_error(""));
+            if let Err(error) = CloseHandle(self.target_process_handle) {
+                panic!(
+                    "TraceContext::CloseHandle error: {:?} ({})",
+                    error.message(),
+                    error.code()
+                );
             }
         }
     }
@@ -101,6 +104,7 @@ const MAX_STACK_DEPTH: usize = 200;
 
 #[derive(Debug)]
 pub enum Error {
+    Formatted(WIN32_ERROR, String, &'static str),
     /// Blondie requires administrator privileges
     NotAnAdmin,
     /// Error writing to the provided Writer
@@ -112,13 +116,21 @@ pub enum Error {
     /// Error waiting for child, timed out
     WaitOnChildErrTimeout,
     /// A call to a windows API function returned an error and we didn't know how to handle it
-    Other(WIN32_ERROR, String, &'static str),
+    Other(core::Error),
     /// We require Windows 7 or greater
     UnsupportedOsVersion,
     /// This should never happen
     UnknownError,
 }
+
 type Result<T> = std::result::Result<T, Error>;
+
+impl From<core::Error> for Error {
+    fn from(err: core::Error) -> Self {
+        Error::Other(err)
+    }
+}
+
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Error::Write(err)
@@ -146,7 +158,7 @@ fn get_last_error(extra: &'static str) -> Error {
             .to_str()
             .unwrap_or("Invalid utf8 in error")
     };
-    Error::Other(code, code_str.to_string(), extra)
+    Error::Formatted(code, code_str.to_string(), extra)
 }
 
 /// A wrapper around `OpenProcess` that returns a handle with all access rights
@@ -171,33 +183,22 @@ fn acquire_privileges() -> Result<()> {
     let mut privs = TOKEN_PRIVILEGES::default();
     privs.PrivilegeCount = 1;
     privs.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    if unsafe {
-        LookupPrivilegeValueW(None, SE_SYSTEM_PROFILE_NAME, &mut privs.Privileges[0].Luid).0 == 0
-    } {
-        return Err(get_last_error("acquire_privileges LookupPrivilegeValueA"));
-    }
+    unsafe { LookupPrivilegeValueW(None, SE_SYSTEM_PROFILE_NAME, &mut privs.Privileges[0].Luid) }?;
     let mut pt = HANDLE::default();
-    if unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &mut pt).0 == 0 } {
-        return Err(get_last_error("OpenProcessToken"));
-    }
+    unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &mut pt) }?;
     let adjust = unsafe { AdjustTokenPrivileges(pt, false, Some(addr_of!(privs)), 0, None, None) };
-    if adjust.0 == 0 {
-        let err = Err(get_last_error("AdjustTokenPrivileges"));
-        unsafe {
-            CloseHandle(pt);
-        }
-        return err;
+    if let Err(err) = adjust {
+        unsafe { CloseHandle(pt) }?;
+        return Err(err.into());
     }
-    let ret = unsafe { CloseHandle(pt) };
-    if ret.0 == 0 {
-        return Err(get_last_error("acquire_privileges CloseHandle"));
-    }
+    unsafe { CloseHandle(pt) }?;
     let status = unsafe { GetLastError() };
     if status != ERROR_SUCCESS {
         return Err(Error::NotAnAdmin);
     }
     Ok(())
 }
+
 /// SAFETY: is_suspended must only be true if `target_process` is suspended
 unsafe fn trace_from_process_id(
     target_process_id: u32,
@@ -206,10 +207,8 @@ unsafe fn trace_from_process_id(
 ) -> Result<TraceContext> {
     let mut winver_info = OSVERSIONINFOA::default();
     winver_info.dwOSVersionInfoSize = size_of::<OSVERSIONINFOA>() as u32;
-    let ret = GetVersionExA(&mut winver_info);
-    if ret.0 == 0 {
-        return Err(get_last_error("TraceSetInformation interval"));
-    }
+    GetVersionExA(&mut winver_info)?;
+
     // If we're not win7 or more, return unsupported
     // https://docs.microsoft.com/en-us/windows/win32/sysinfo/operating-system-version
     if winver_info.dwMajorVersion < 6
@@ -228,7 +227,7 @@ unsafe fn trace_from_process_id(
         // TODO: Parameter?
         interval.Interval = (1000000000 / 8000) / 100;
         let ret = TraceSetInformation(
-            None,
+            CONTROLTRACE_HANDLE::default(),
             // The value is supported on Windows 8, Windows Server 2012, and later.
             TraceSampledProfileIntervalInfo,
             addr_of!(interval).cast(),
@@ -298,7 +297,7 @@ unsafe fn trace_from_process_id(
     {
         let mut event_trace_props_copy = event_trace_props.clone();
         let control_stop_retcode = ControlTraceA(
-            None,
+            CONTROLTRACE_HANDLE::default(),
             kernel_logger_name_with_nul_pcstr,
             addr_of_mut!(event_trace_props_copy) as *mut _,
             EVENT_TRACE_CONTROL_STOP,
@@ -484,15 +483,15 @@ unsafe fn trace_from_process_id(
     log.Anonymous2.EventRecordCallback = Some(event_record_callback);
 
     let trace_processing_handle = OpenTraceA(&mut log);
-    if trace_processing_handle.0 == INVALID_HANDLE_VALUE.0 as u64 {
+    if trace_processing_handle.Value == UINTPTR_MAX {
         return Err(get_last_error("OpenTraceA processing"));
     }
 
     let (sender, recvr) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         // This blocks
-        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-        ProcessTrace(&[trace_processing_handle], None, None);
+        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL).unwrap();
+        ProcessTrace(&[trace_processing_handle], None, None).ok().unwrap();
 
         let ret = CloseTrace(trace_processing_handle);
         if ret != ERROR_SUCCESS {
@@ -522,7 +521,7 @@ unsafe fn trace_from_process_id(
         )
         .expect("Could not find NtResumeProcess in ntdll.dll");
         #[allow(non_snake_case)]
-        let NtResumeProcess: extern "system" fn(isize) -> i32 =
+        let NtResumeProcess: extern "system" fn(*mut c_void) -> i32 =
             std::mem::transmute(NtResumeProcess);
         NtResumeProcess(context.target_process_handle.0);
     }
@@ -946,3 +945,8 @@ fn list_kernel_modules() -> Vec<(OsString, u64, u64)> {
         .collect();
     kernel_module_paths
 }
+
+#[cfg(target_pointer_width = "32")]
+const UINTPTR_MAX: u64 = u32::MAX as u64;
+#[cfg(target_pointer_width = "64")]
+const UINTPTR_MAX: u64 = u64::MAX;
